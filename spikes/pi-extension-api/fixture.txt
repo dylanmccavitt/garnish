@@ -1,0 +1,2 @@
+Garnish Pi extension API spike fixture.
+If an OMP run reads this file, the extension should capture tool_call and tool_result events for the read tool.

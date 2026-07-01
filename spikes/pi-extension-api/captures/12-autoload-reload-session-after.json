@@ -1,0 +1,20 @@
+{
+  "sourceSessionFile": "/var/folders/kk/k4gwllpx1cb8yl9n5t1stn8h0000gn/T/garnish-loo118-autoload-x9jq7bdk/agent/sessions/-tmp-garnish-loo118-autoload-x9jq7bdk-workdir/2026-07-01T23-43-37-079Z_019f2011-1077-7000-b428-83cb17e2143d.jsonl",
+  "recordCount": 2,
+  "records": [
+    {
+      "type": "title",
+      "customType": null,
+      "id": null,
+      "parentId": null
+    },
+    {
+      "type": "session",
+      "customType": null,
+      "id": "019f2011-11f8-7000-8f00-323124496c41",
+      "parentId": null
+    }
+  ],
+  "containsSpikeCustomEntries": false,
+  "finding": "After ctx.reload() returned in print mode, the persisted session file contained only title/session records; custom entries appended before reload were not present."
+}

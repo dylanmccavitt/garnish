@@ -1,0 +1,194 @@
+{
+  "command": "omp -p --no-title --max-time 60 Say exactly TARGET_ISOLATION_PROBE.",
+  "cwd": "/var/folders/kk/k4gwllpx1cb8yl9n5t1stn8h0000gn/T/garnish-loo118-target-isolation-hdh9oyh8/workdir",
+  "extensionLoad": "Copied spike extension to $PI_CODING_AGENT_DIR/extensions/pi-extension-api/index.js; no -e flag was used.",
+  "env": {
+    "HOME": "/var/folders/kk/k4gwllpx1cb8yl9n5t1stn8h0000gn/T/garnish-loo118-target-isolation-hdh9oyh8/home",
+    "PI_CODING_AGENT_DIR": "/var/folders/kk/k4gwllpx1cb8yl9n5t1stn8h0000gn/T/garnish-loo118-target-isolation-hdh9oyh8/agent",
+    "OMP_AUTH_BROKER_SNAPSHOT_CACHE": "/var/folders/kk/k4gwllpx1cb8yl9n5t1stn8h0000gn/T/garnish-loo118-target-isolation-hdh9oyh8/auth-broker-snapshot.enc",
+    "GARNISH_PI_SPIKE_LOG_DIR": "/Users/dylanmccavitt/projects/garnish-loo-118/spikes/pi-extension-api/captures",
+    "GARNISH_PI_SPIKE_RUN": "18-target-isolation-probe"
+  },
+  "returncode": 0,
+  "stdout": "TARGET_ISOLATION_PROBE",
+  "stderr_excerpt": "",
+  "copied_auth_provider_files": [
+    "agent.db",
+    "agent.db-shm",
+    "agent.db-wal",
+    "models.db",
+    "models.db-shm",
+    "models.db-wal",
+    "config.yml"
+  ],
+  "real_session_slug_checked": "/Users/dylanmccavitt/.omp/agent/sessions/-var-folders-kk-k4gwllpx1cb8yl9n5t1stn8h0000gn-T-garnish-loo118-target-isolation-hdh9oyh8-workdir",
+  "targeted_real_state_before": {
+    "real_agent_config_yml": {
+      "exists": true,
+      "is_dir": false,
+      "size": 41,
+      "mtime_ns": 1782948858611449243,
+      "children": null
+    },
+    "real_agent_extensions_dir": {
+      "exists": true,
+      "is_dir": true,
+      "size": 0,
+      "mtime_ns": 1782948858657025159,
+      "children": [
+        ".gitkeep"
+      ]
+    },
+    "real_session_dir_for_temp_cwd": null
+  },
+  "targeted_real_state_after": {
+    "real_agent_config_yml": {
+      "exists": true,
+      "is_dir": false,
+      "size": 41,
+      "mtime_ns": 1782948858611449243,
+      "children": null
+    },
+    "real_agent_extensions_dir": {
+      "exists": true,
+      "is_dir": true,
+      "size": 0,
+      "mtime_ns": 1782948858657025159,
+      "children": [
+        ".gitkeep"
+      ]
+    },
+    "real_session_dir_for_temp_cwd": null
+  },
+  "targeted_real_changes": {},
+  "targeted_real_changed_count": 0,
+  "isolated_root": "/var/folders/kk/k4gwllpx1cb8yl9n5t1stn8h0000gn/T/garnish-loo118-target-isolation-hdh9oyh8",
+  "isolated_files": [
+    {
+      "path": "home",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "workdir",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "agent",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "home/.omp",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "workdir/target-isolation-fixture.txt",
+      "is_dir": false,
+      "size": 23
+    },
+    {
+      "path": "agent/models.db-shm",
+      "is_dir": false,
+      "size": 32768
+    },
+    {
+      "path": "agent/agent.db",
+      "is_dir": false,
+      "size": 1908736
+    },
+    {
+      "path": "agent/models.db-wal",
+      "is_dir": false,
+      "size": 0
+    },
+    {
+      "path": "agent/extensions",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "agent/sessions",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "agent/models.db",
+      "is_dir": false,
+      "size": 114688
+    },
+    {
+      "path": "agent/config.yml",
+      "is_dir": false,
+      "size": 1738
+    },
+    {
+      "path": "agent/agent.db-wal",
+      "is_dir": false,
+      "size": 1738672
+    },
+    {
+      "path": "agent/agent.db-shm",
+      "is_dir": false,
+      "size": 32768
+    },
+    {
+      "path": "agent/extensions/pi-extension-api",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "agent/sessions/-tmp-garnish-loo118-target-isolation-hdh9oyh8-workdir",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "agent/sessions/-tmp-garnish-loo118-target-isolation-hdh9oyh8-workdir/2026-07-01T23-47-02-324Z_019f2014-3234-7000-adad-98df75aa6afc.jsonl",
+      "is_dir": false,
+      "size": 3829
+    },
+    {
+      "path": "agent/extensions/pi-extension-api/index.js",
+      "is_dir": false,
+      "size": 9443
+    },
+    {
+      "path": "home/.omp/logs",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "home/.omp/natives",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "home/.omp/gpu_cache.json",
+      "is_dir": false,
+      "size": 16
+    },
+    {
+      "path": "home/.omp/logs/.3f45a7975702faf639eb5d43b12157bfa7e44bac-audit.json",
+      "is_dir": false,
+      "size": 580
+    },
+    {
+      "path": "home/.omp/logs/omp.2026-07-01.log",
+      "is_dir": false,
+      "size": 8760
+    },
+    {
+      "path": "home/.omp/natives/16.2.13",
+      "is_dir": true,
+      "size": 0
+    },
+    {
+      "path": "home/.omp/natives/16.2.13/pi_natives.darwin-arm64.node",
+      "is_dir": false,
+      "size": 132735648
+    }
+  ],
+  "isolated_file_count": 25
+}

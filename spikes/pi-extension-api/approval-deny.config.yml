@@ -1,0 +1,4 @@
+tools:
+  approvalMode: yolo
+  approval:
+    bash: deny
