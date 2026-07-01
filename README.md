@@ -20,4 +20,4 @@ Status: planning / pre-M0.
 
 ## License
 
-No license has been selected yet. All rights reserved until the project owner chooses one.
+MIT — see [LICENSE](LICENSE).
