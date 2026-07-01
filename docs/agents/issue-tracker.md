@@ -47,9 +47,9 @@ relations and grouped under project milestones M0-M5 (M5 is a v2 placeholder wit
 Content-pack chain edges (L0->...->L7) are merge order only: levels share the one in-repo core
 pack and the loader rejects unknown quest ids; authoring may parallelize.
 
-Ready to start (Todo): LOO-116, LOO-117, LOO-118, LOO-119. Everything else is Backlog until
-its blockers close.
+Ready to start (Todo): LOO-117, LOO-118, LOO-119. Everything else is Backlog until its
+blockers close. LOO-116 (license) is Done.
 
 ## Notes
 
-- Repository currently has no selected license; do not add one without owner approval (tracked as LOO-116).
+- License: MIT (LICENSE, commit 39fe8ef; decision recorded on LOO-116).
