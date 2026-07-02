@@ -15,6 +15,13 @@ Tracker: Linear
 - ARD — Garnish: https://linear.app/dylanmccavitt/document/ard-garnish-cf395973f74d
 - Quest Inventory — Garnish Core Pack: https://linear.app/dylanmccavitt/document/quest-inventory-garnish-core-pack-49b81216c2f6
 
+## Related projects
+
+- Garnish Standalone — purpose-built harness & TUI (prospect, 2026-07-02):
+  https://linear.app/dylanmccavitt/project/garnish-standalone-purpose-built-harness-and-tui-98f6de260a93
+  Brief: https://linear.app/dylanmccavitt/document/brief-garnish-standalone-purpose-built-harness-and-tui-2527da9a5034
+  Decision pending (tool-fluency vs craft-fluency thesis); does not change v1 scope by itself.
+
 ## GitHub
 
 - Repository: https://github.com/DylanMcCavitt/garnish
