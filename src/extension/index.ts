@@ -268,5 +268,23 @@ function normalizePayload(event: PiExtensionEvent): Readonly<Record<string, unkn
     }
     payload[key] = value;
   }
+
+  // Real Pi agent_end events carry `messages`, not a turn counter (LOO-118 spike).
+  // Derive the count here so `min_assistant_turns` checks work against live events;
+  // an explicit assistant_turns field (recorded fixtures, tests) always wins.
+  if (
+    payload.assistant_turns === undefined &&
+    payload.assistantTurns === undefined &&
+    Array.isArray(payload.messages)
+  ) {
+    payload.assistant_turns = payload.messages.filter(
+      (message) => isRecord(message) && message.role === "assistant",
+    ).length;
+  }
+
   return payload;
+}
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

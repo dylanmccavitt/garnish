@@ -50,7 +50,11 @@ interface QuestLine {
   readonly isNext: boolean;
 }
 
-export function renderStatus(state: ProgressionState, graph: ProgressionGraph): string {
+export function renderStatus(
+  state: ProgressionState,
+  graph: ProgressionGraph,
+  quests?: readonly Quest[],
+): string {
   const lines: string[] = [];
   const currentLevel = state.currentLevel === null ? undefined : findLevel(graph, `${state.currentLevel}`);
   const levelLabel = currentLevel === undefined ? "all levels complete" : `Level ${currentLevel.order} — ${currentLevel.id}`;
@@ -65,7 +69,7 @@ export function renderStatus(state: ProgressionState, graph: ProgressionGraph): 
     lines.push(`Badges: ${badgeText}`);
   }
 
-  const questLines = computeQuestLines(state, graph);
+  const questLines = computeQuestLines(state, graph, quests);
   for (const level of [...graph.levels].sort((left, right) => left.order - right.order)) {
     lines.push("");
     lines.push(`Level ${level.order}: ${level.id}${state.completedLevels.includes(level.id) ? " ✓" : ""}`);
@@ -86,12 +90,12 @@ export function renderStatus(state: ProgressionState, graph: ProgressionGraph): 
 
 export async function statusCommand(deps: CliDeps): Promise<CommandOutcome> {
   const state = foldEvents(await deps.store.readEvents(), deps.graph);
-  return { text: renderStatus(state, deps.graph), exitCode: 0 };
+  return { text: renderStatus(state, deps.graph, deps.quests), exitCode: 0 };
 }
 
 export async function questCommand(deps: CliDeps): Promise<CommandOutcome> {
   const state = foldEvents(await deps.store.readEvents(), deps.graph);
-  const next = computeQuestLines(state, deps.graph).find((line) => line.isNext);
+  const next = computeQuestLines(state, deps.graph, deps.quests).find((line) => line.isNext);
 
   if (next === undefined) {
     return { text: "No active quest — all required quests are complete.", exitCode: 0 };
@@ -268,9 +272,18 @@ function parseUnlockArgs(args: readonly string[]): UnlockOptions {
   return options;
 }
 
-function computeQuestLines(state: ProgressionState, graph: ProgressionGraph): QuestLine[] {
+function computeQuestLines(
+  state: ProgressionState,
+  graph: ProgressionGraph,
+  quests?: readonly Quest[],
+): QuestLine[] {
   const orderedLevels = [...graph.levels].sort((left, right) => left.order - right.order);
   const completedQuests = new Set<string>(state.completedQuests.map(String));
+  // The graph is canonically id-sorted; prereqs (from the full quest data, when
+  // available) keep the "next" pointer off quests whose prerequisites are still open.
+  const prereqsById = new Map<string, readonly string[]>(
+    (quests ?? []).map((quest) => [`${quest.id}`, quest.prereqs.map(String)]),
+  );
   const lines: QuestLine[] = [];
   let nextAssigned = false;
 
@@ -290,7 +303,10 @@ function computeQuestLines(state: ProgressionState, graph: ProgressionGraph): Qu
         lines.push({ quest, state: "locked", isNext: false });
         continue;
       }
-      const isNext = !nextAssigned && quest.required;
+      const prereqsMet = (prereqsById.get(`${quest.id}`) ?? []).every((prereq) =>
+        completedQuests.has(prereq),
+      );
+      const isNext = !nextAssigned && quest.required && prereqsMet;
       if (isNext) {
         nextAssigned = true;
       }

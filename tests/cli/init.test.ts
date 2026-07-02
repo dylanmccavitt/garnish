@@ -55,6 +55,7 @@ interface InitHarness {
   readonly launches: LaunchSpec[];
   readonly prompter: QueuedPrompter;
   readonly track: { execs: string[]; installs: number };
+  readonly extensionInstalls: string[];
 }
 
 async function makeHarness(options: HarnessOptions): Promise<InitHarness> {
@@ -62,15 +63,17 @@ async function makeHarness(options: HarnessOptions): Promise<InitHarness> {
   const launches: LaunchSpec[] = [];
   const prompter = queuedPrompter(options.answers);
   const track = { execs: [] as string[], installs: 0 };
+  const extensionInstalls: string[] = [];
 
   return {
     root,
     launches,
     prompter,
     track,
+    extensionInstalls,
     deps: {
       garnishRootDir: root,
-      packSourceDir,
+      packSourceDirs: [packSourceDir],
       prompter,
       runtimeEffects: fakeRuntimeEffects(track),
       gateEffects: {
@@ -82,6 +85,9 @@ async function makeHarness(options: HarnessOptions): Promise<InitHarness> {
         },
       },
       fs: realFs,
+      installExtension: (agentDir) => {
+        extensionInstalls.push(agentDir);
+      },
       launch: (spec) => {
         launches.push(spec);
       },
@@ -125,6 +131,18 @@ test("hermetic E2E: init installs runtime, writes isolated config, activates L0,
     "second-turn",
     "status-screen",
   ]);
+
+  const graphFile = JSON.parse(await readFile(join(agentDir, "garnish", "graph.json"), "utf8")) as {
+    levels: readonly { id: string }[];
+  };
+  expect(graphFile.levels.map((level) => level.id)).toEqual(["tutorial-island"]);
+  const questsFile = JSON.parse(await readFile(join(agentDir, "garnish", "quests.json"), "utf8")) as readonly {
+    id: string;
+    checks: readonly unknown[];
+  }[];
+  expect(questsFile).toHaveLength(4);
+  expect(questsFile.every((quest) => quest.checks.length > 0)).toBe(true);
+  expect(harness.extensionInstalls).toEqual([agentDir]);
 
   const sandboxStat = await stat(result.sandboxDir);
   expect(sandboxStat.isDirectory()).toBe(true);

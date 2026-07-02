@@ -1,5 +1,7 @@
 import { isAbsolute, join, relative, resolve } from "node:path";
 
+import { parse as parseYaml } from "yaml";
+
 import type { FeatureId } from "../core";
 import type { ProgressionUnlockSet } from "../progression";
 import type { RuntimePaths } from "./types";
@@ -44,6 +46,8 @@ export interface RenderedGateConfig {
 export interface GateConfigEffects {
   readonly mkdirp: (path: string) => void | Promise<void>;
   readonly writeFile: (path: string, content: string) => void | Promise<void>;
+  /** Optional: lets gate writes preserve non-Garnish keys (e.g. `providers`) in config.yml. */
+  readonly readFile?: (path: string) => string | undefined | Promise<string | undefined>;
 }
 
 export interface GateParityIssue {
@@ -185,8 +189,9 @@ export async function writeGateConfig(
   effects: GateConfigEffects,
 ): Promise<void> {
   const agentDir = resolve(paths.agentDir);
+  const configPath = join(agentDir, rendered.configPath);
   const writes = [
-    { path: join(agentDir, rendered.configPath), content: rendered.configYml },
+    { path: configPath, content: await mergedConfigYml(configPath, rendered, effects) },
     { path: join(agentDir, rendered.mcpPath), content: rendered.mcpJson },
   ] as const;
 
@@ -198,6 +203,54 @@ export async function writeGateConfig(
   for (const write of writes) {
     await effects.writeFile(write.path, write.content);
   }
+}
+
+/**
+ * Garnish owns exactly the keys it renders and replaces them wholesale; every other
+ * top-level key (e.g. `providers` with the learner's apiKeyRef) survives gate re-renders.
+ * Without a read effect (or an unreadable/invalid existing file) the rendered config wins.
+ */
+async function mergedConfigYml(
+  configPath: string,
+  rendered: RenderedGateConfig,
+  effects: GateConfigEffects,
+): Promise<string> {
+  if (effects.readFile === undefined) {
+    return rendered.configYml;
+  }
+
+  let existingText: string | undefined;
+  try {
+    existingText = await effects.readFile(configPath);
+  } catch {
+    existingText = undefined;
+  }
+  if (existingText === undefined) {
+    return rendered.configYml;
+  }
+
+  let existing: unknown;
+  try {
+    existing = parseYaml(existingText);
+  } catch {
+    return rendered.configYml;
+  }
+  const existingRecord = recordValue(existing);
+  if (existingRecord === undefined) {
+    return rendered.configYml;
+  }
+
+  const preserved: MutableRecord = {};
+  for (const [key, value] of Object.entries(existingRecord)) {
+    if (!(key in rendered.config)) {
+      preserved[key] = value;
+    }
+  }
+  if (Object.keys(preserved).length === 0) {
+    return rendered.configYml;
+  }
+
+  return `${generatedHeader}${stableYaml({ ...preserved, ...rendered.config })}`;
 }
 
 export function assertGateWritePathUnderAgentDir(agentDir: string, candidate: string): void {

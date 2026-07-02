@@ -1,3 +1,5 @@
+import { basename } from "node:path";
+
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import {
@@ -31,11 +33,12 @@ export interface InitFsEffects {
 
 export interface InitDeps {
   readonly garnishRootDir: string;
-  readonly packSourceDir: string;
+  readonly packSourceDirs: readonly string[];
   readonly prompter: Prompter;
   readonly runtimeEffects: RuntimeEffects;
   readonly gateEffects: GateConfigEffects;
   readonly fs: InitFsEffects;
+  readonly installExtension: (agentDir: string) => void | Promise<void>;
   readonly launch: (spec: LaunchSpec) => void | Promise<void>;
   readonly now: () => string;
   readonly catalog?: GateCatalog;
@@ -104,29 +107,38 @@ export async function initCommand(deps: InitDeps): Promise<InitResult> {
   // 4. Sandbox — a disposable learning dir, never an existing project by default.
   const sandboxDir = await ask("Sandbox directory?", `${paths.garnishRootDir}/sandbox`);
 
-  // Activate the real L0 pack: copy into Garnish-owned storage and validate via the loader.
+  // Activate the real core packs: copy into Garnish-owned storage and validate via the loader.
+  // L0 is the active level; later levels ship locked so unlock visibility is real (PRD AC-4/5).
   const packsDir = `${paths.agentDir}/garnish/packs`;
-  const l0Dir = `${packsDir}/l0-tutorial-island`;
   await deps.fs.mkdirp(packsDir);
-  await deps.fs.copyDir(deps.packSourceDir, l0Dir);
-  const l0: QuestGraph = await loadPack(l0Dir);
+  const graphs: QuestGraph[] = [];
+  for (const sourceDir of deps.packSourceDirs) {
+    const destination = `${packsDir}/${basename(sourceDir.replace(/\/+$/, ""))}`;
+    await deps.fs.copyDir(sourceDir, destination);
+    graphs.push(await loadPack(destination));
+  }
 
   const progressionGraph: ProgressionGraph = {
-    levels: l0.levels.map((entry) => ({
-      id: entry.id,
-      order: entry.order,
-      quests: entry.quests,
-      unlocks: entry.unlocks,
-    })),
-    quests: l0.quests.map((entry) => ({
-      id: entry.id,
-      level: entry.level,
-      required: entry.required,
-      xp: entry.xp,
-      unlocks: entry.unlocks,
-    })),
-    unlockEdges: l0.unlockEdges,
+    levels: graphs.flatMap((graph) =>
+      graph.levels.map((entry) => ({
+        id: entry.id,
+        order: entry.order,
+        quests: entry.quests,
+        unlocks: entry.unlocks,
+      })),
+    ),
+    quests: graphs.flatMap((graph) =>
+      graph.quests.map((entry) => ({
+        id: entry.id,
+        level: entry.level,
+        required: entry.required,
+        xp: entry.xp,
+        unlocks: entry.unlocks,
+      })),
+    ),
+    unlockEdges: graphs.flatMap((graph) => graph.unlockEdges),
   };
+  const allQuests = graphs.flatMap((graph) => graph.quests);
 
   // Speedrun unlocks go through progression events (reason "speedrun", no xp_award).
   const speedrunUnlocks: UnlockEvent[] = [];
@@ -181,13 +193,18 @@ export async function initCommand(deps: InitDeps): Promise<InitResult> {
   // ADR-7 static tutor framing — appends via APPEND_SYSTEM.md, never replaces defaults.
   await writeTutorFraming(paths.agentDir, { writeFile: deps.fs.writeFile });
 
-  // Derived snapshot consumed by the L0 install-certified-pi check.
+  // Pre-serialized graph + quests: the bundled extension entry reads these synchronously
+  // at session start (spike lesson: extension module init must stay synchronous).
+  await deps.fs.writeFile(`${garnishDir}/graph.json`, `${JSON.stringify(progressionGraph, null, 2)}\n`);
+  await deps.fs.writeFile(`${garnishDir}/quests.json`, `${JSON.stringify(allQuests, null, 2)}\n`);
+
+  // Derived snapshot consumed by the L0 install-certified-pi check and the extension entry.
   await deps.fs.writeFile(
     `${garnishDir}/state.json`,
     `${JSON.stringify(
       {
         activeLevel: "tutorial-island",
-        packs: ["l0-tutorial-island"],
+        packs: graphs.map((graph) => `${graph.pack.id}`),
         runtime: { certifiedVersion: runtime.version ?? "" },
         sandboxDir,
       },
@@ -195,6 +212,10 @@ export async function initCommand(deps: InitDeps): Promise<InitResult> {
       2,
     )}\n`,
   );
+
+  // Install the bundled Garnish extension where the certified runtime autoloads it
+  // ($PI_CODING_AGENT_DIR/extensions/garnish/index.js, per the LOO-118 spike).
+  await deps.installExtension(paths.agentDir);
 
   await deps.fs.mkdirp(sandboxDir);
 
