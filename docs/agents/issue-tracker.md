@@ -47,16 +47,16 @@ relations and grouped under project milestones M0-M5 (M5 is a v2 placeholder wit
 Content-pack chain edges (L0->...->L7) are merge order only: levels share the one in-repo core
 pack and the loader rejects unknown quest ids; authoring may parallelize.
 
-Done (merged + bridge-closed): LOO-116 license, LOO-117 bridge (verified live via PR #1
-auto-close), LOO-118 spike (PR #2), LOO-119 scaffold (PR #1), LOO-120 core types (PR #4),
-LOO-121 certified runtime (PR #3), LOO-122 pack loader (PR #6), LOO-123 progression (PR #5),
-LOO-124 verifier (PR #8), LOO-125 gate rendering (PR #7), LOO-126 extension core (PR #11),
-LOO-127 L0 pack + verifier [*] wildcard (PR #9), LOO-128 CLI surfaces (PR #10).
-M0 complete; M1 lacks only LOO-130 init; M2 core mechanism landed.
-Next unblocked: LOO-129 live unlocks, LOO-130 init wizard, LOO-131 L1 pack, LOO-132 HUD,
-LOO-135 tutor bridge. Everything else is Backlog until its blockers close.
-Note: L0 status-screen quest uses `command(garnish status exit=0)` only — the check DSL
-has no OR combinator; the `/quest` event alternative lands with LOO-132's HUD event path.
+Done (merged + bridge-closed), 18 of 29: LOO-116..LOO-128 (see PRs #1-#11 above/git log),
+LOO-129 live unlocks (PR #14), LOO-130 init wizard (PR #15), LOO-131 L1 pack + `approved`
+event matcher (PR #12), LOO-132 HUD + /quest (PR #13), LOO-135 tutor bridge (PR #16,
+live-smoke verified: "what's my quest?" answered with the real L0 checks).
+M0 + M1 complete. M2 lacks only LOO-136 scripted E2E + LOO-139 live walkthrough (HITL).
+Next unblocked: LOO-136 scripted E2E happy path, LOO-137 L2 Lore pack.
+LOO-139 (M2 exit gate) needs a human-supervised live session once LOO-136 lands.
+Everything else is Backlog until its blockers close.
+Notes: L0 status-screen uses `command(garnish status exit=0)` (no OR in the DSL);
+deny-once is a real `event(tool_approval_resolved approved=false)` check per the spike.
 
 ## Notes
 
