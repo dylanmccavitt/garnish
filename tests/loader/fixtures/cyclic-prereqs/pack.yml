@@ -1,0 +1,8 @@
+id: cyclic-prereqs
+title: Cyclic Prereqs Pack
+version: 0.1.0
+levels:
+  - id: cycle-level
+    title: Cycle Level
+    order: 0
+    quests: [cycle-a, cycle-b]

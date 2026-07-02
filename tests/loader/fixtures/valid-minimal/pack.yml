@@ -1,0 +1,16 @@
+id: valid-minimal
+title: Valid Minimal Pack
+version: 0.1.0
+requires:
+  adapters: [pi]
+levels:
+  - id: tutorial-island
+    title: Tutorial Island
+    order: 0
+    quests: [install-engine, connect-agent]
+    unlocks: [feature:chat]
+  - id: first-quest
+    title: First Quest
+    order: 1
+    quests: [first-file]
+    unlocks: [tool:file]

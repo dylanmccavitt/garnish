@@ -1,0 +1,9 @@
+id: unknown-feature
+title: Unknown Feature Pack
+version: 0.1.0
+levels:
+  - id: unknown-level
+    title: Unknown Level
+    order: 0
+    quests: [unlock-shell]
+    unlocks: []

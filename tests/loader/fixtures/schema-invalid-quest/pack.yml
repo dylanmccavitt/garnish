@@ -1,0 +1,8 @@
+id: schema-invalid-quest
+title: Schema Invalid Quest Pack
+version: 0.1.0
+levels:
+  - id: bad-level
+    title: Bad Level
+    order: 0
+    quests: [valid-quest, broken-quest]
