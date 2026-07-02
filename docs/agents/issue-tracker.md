@@ -20,6 +20,7 @@ Tracker: Linear
 - Garnish Standalone — purpose-built harness & TUI (DECIDED 2026-07-02, state: Planned):
   https://linear.app/dylanmccavitt/project/garnish-standalone-purpose-built-harness-and-tui-98f6de260a93
   Brief + decision record: https://linear.app/dylanmccavitt/document/brief-garnish-standalone-purpose-built-harness-and-tui-2527da9a5034
+  Research spike (2026-07-02): https://linear.app/dylanmccavitt/document/research-spike-garnish-standalone-harness-architecture-2026-07-02-4a7d1435bfd3
   Decision: fully own harness — own agent loop + TUI, omp dropped. Repeals ARD §1/ADR-8/9
   for v-next. Evolve this repo; no fresh repo. Main bus (packs, verifier, progression,
   gates, curriculum) carries over. v1 omp-coupled work (LOO-148/149/150,
