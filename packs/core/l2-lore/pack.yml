@@ -1,0 +1,13 @@
+id: l2-lore
+title: Lore (Context)
+description: Level 2 context literacy — write durable project lore, follow it, resume from context, and keep it lean.
+version: 0.1.0
+requires:
+  adapters: [pi]
+levels:
+  - id: lore
+    title: Lore
+    description: Level 2 — context. Completing required quests unlocks the Skill Tree.
+    order: 2
+    quests: [project-lore-file, follow-a-rule, resume-run, context-diet]
+    unlocks: ["skills"]
