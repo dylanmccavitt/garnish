@@ -1,4 +1,5 @@
 export { adapterContract, adapterContractEventNames, assertAdapterContract } from "./contract";
+export * from "./gates";
 export { assertGarnishOwnedPaths, certifiedRelease, certifiedVersion, createLaunchSpec, ensureRuntime, handshake, parseOmpVersion, piHarnessAdapter, runtimePaths, runtimeStorageDirs } from "./runtime";
 export type {
   AdapterContract,
