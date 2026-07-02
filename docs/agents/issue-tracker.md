@@ -47,10 +47,12 @@ relations and grouped under project milestones M0-M5 (M5 is a v2 placeholder wit
 Content-pack chain edges (L0->...->L7) are merge order only: levels share the one in-repo core
 pack and the loader rejects unknown quest ids; authoring may parallelize.
 
-In Review: LOO-118 (spike findings, PR #2), LOO-119 (repo scaffold, PR #1).
-Ready to start (Todo): LOO-117 (HITL — needs workspace admin to enable the Linear/GitHub
-integration; not automatable). Everything else is Backlog until its blockers close.
-LOO-116 (license) is Done.
+Done (merged + bridge-closed): LOO-116 license, LOO-117 bridge (verified live via PR #1
+auto-close), LOO-118 spike (PR #2), LOO-119 scaffold (PR #1), LOO-120 core types (PR #4),
+LOO-121 certified runtime (PR #3), LOO-122 pack loader (PR #6), LOO-123 progression (PR #5),
+LOO-124 verifier (PR #8), LOO-125 gate rendering (PR #7). M0 complete.
+In Progress: LOO-126 extension core, LOO-127 L0 pack, LOO-128 CLI surfaces.
+Everything else is Backlog until its blockers close.
 
 ## Notes
 
