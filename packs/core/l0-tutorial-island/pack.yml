@@ -1,0 +1,13 @@
+id: l0-tutorial-island
+title: Tutorial Island (Onboarding)
+description: First-run learner path — certified runtime, first reply, session continuity, status surfaces.
+version: 0.1.0
+requires:
+  adapters: [pi]
+levels:
+  - id: tutorial-island
+    title: Tutorial Island
+    description: Level 0 — onboarding. Completing required quests unlocks the core file and shell tools.
+    order: 0
+    quests: [install-certified-pi, connect-agent, second-turn, status-screen]
+    unlocks: ["tool:file", "tool:shell"]

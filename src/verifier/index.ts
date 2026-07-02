@@ -335,14 +335,23 @@ async function evaluateStructuredPathCheck(
   }
 
   const pathResult = readJsonPath(parsed, pathExpression);
-  const passed = assertionMatches(assertion, pathResult.value, pathResult.found);
+  const passed = pathResult.wildcard
+    ? pathResult.values.some((value) => assertionMatches(assertion, value, true)) ||
+      (assertion === "missing" && pathResult.values.length === 0)
+    : assertionMatches(assertion, pathResult.value, pathResult.found);
 
   return {
     status: passed ? "pass" : "fail",
     evidence: {
       kind,
       message: passed ? "path assertion matched" : "path assertion did not match",
-      details: { file, path: pathExpression, found: pathResult.found, value: pathResult.value, assertion },
+      details: {
+        file,
+        path: pathExpression,
+        found: pathResult.found,
+        value: pathResult.wildcard ? pathResult.values : pathResult.value,
+        assertion,
+      },
     },
   };
 }
@@ -718,36 +727,66 @@ function assertionMatches(assertion: Assertion, value: unknown, found: boolean):
   return false;
 }
 
-function readJsonPath(root: unknown, path: string): { readonly found: boolean; readonly value: unknown } {
-  const tokens = parseJsonPath(path);
-  if (tokens === undefined) {
-    return { found: false, value: undefined };
-  }
+const WILDCARD = Symbol("jsonpath-wildcard");
+type JsonPathToken = string | number | typeof WILDCARD;
 
-  let value = root;
-  for (const token of tokens) {
-    if (typeof token === "number") {
-      if (!Array.isArray(value) || token < 0 || token >= value.length) {
-        return { found: false, value: undefined };
-      }
-      value = value[token];
-      continue;
-    }
-    if (!isRecord(value) || !(token in value)) {
-      return { found: false, value: undefined };
-    }
-    value = value[token];
-  }
-
-  return { found: true, value };
+interface JsonPathResult {
+  readonly found: boolean;
+  readonly value: unknown;
+  readonly wildcard: boolean;
+  readonly values: readonly unknown[];
 }
 
-function parseJsonPath(path: string): (string | number)[] | undefined {
+function readJsonPath(root: unknown, path: string): JsonPathResult {
+  const tokens = parseJsonPath(path);
+  if (tokens === undefined) {
+    return { found: false, value: undefined, wildcard: false, values: [] };
+  }
+
+  const wildcard = tokens.includes(WILDCARD);
+  let candidates: unknown[] = [root];
+
+  for (const token of tokens) {
+    const next: unknown[] = [];
+    for (const candidate of candidates) {
+      if (token === WILDCARD) {
+        if (Array.isArray(candidate)) {
+          next.push(...candidate);
+        } else if (isRecord(candidate)) {
+          next.push(...Object.values(candidate));
+        }
+        continue;
+      }
+      if (typeof token === "number") {
+        if (Array.isArray(candidate) && token >= 0 && token < candidate.length) {
+          next.push(candidate[token]);
+        }
+        continue;
+      }
+      if (isRecord(candidate) && token in candidate) {
+        next.push(candidate[token]);
+      }
+    }
+    candidates = next;
+    if (candidates.length === 0) {
+      break;
+    }
+  }
+
+  return {
+    found: candidates.length > 0,
+    value: candidates[0],
+    wildcard,
+    values: candidates,
+  };
+}
+
+function parseJsonPath(path: string): JsonPathToken[] | undefined {
   if (!path.startsWith("$")) {
     return undefined;
   }
 
-  const tokens: (string | number)[] = [];
+  const tokens: JsonPathToken[] = [];
   let index = 1;
 
   while (index < path.length) {
@@ -770,7 +809,9 @@ function parseJsonPath(path: string): (string | number)[] | undefined {
         return undefined;
       }
       const raw = path.slice(index + 1, end).trim();
-      if (/^\d+$/.test(raw)) {
+      if (raw === "*") {
+        tokens.push(WILDCARD);
+      } else if (/^\d+$/.test(raw)) {
         tokens.push(Number.parseInt(raw, 10));
       } else if ((raw.startsWith("\"") && raw.endsWith("\"")) || (raw.startsWith("'") && raw.endsWith("'"))) {
         tokens.push(raw.slice(1, -1));
