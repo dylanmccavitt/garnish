@@ -21,8 +21,18 @@ Tracker: Linear
   https://linear.app/dylanmccavitt/project/garnish-standalone-purpose-built-harness-and-tui-98f6de260a93
   Brief + decision record: https://linear.app/dylanmccavitt/document/brief-garnish-standalone-purpose-built-harness-and-tui-2527da9a5034
   Research spike (2026-07-02): https://linear.app/dylanmccavitt/document/research-spike-garnish-standalone-harness-architecture-2026-07-02-4a7d1435bfd3
-  PRD v2 (2026-07-03, draft for acceptance): https://linear.app/dylanmccavitt/document/prd-v2-garnish-standalone-purpose-built-harness-and-tui-632ac25c9788
-  ARD v2 (2026-07-03, draft for acceptance): https://linear.app/dylanmccavitt/document/ard-v2-garnish-standalone-architecture-decisions-c71d90cbecef
+  PRD v2 (ACCEPTED 2026-07-04): https://linear.app/dylanmccavitt/document/prd-v2-garnish-standalone-purpose-built-harness-and-tui-632ac25c9788
+  ARD v2 (ACCEPTED 2026-07-04): https://linear.app/dylanmccavitt/document/ard-v2-garnish-standalone-architecture-decisions-c71d90cbecef
+  Implementation issues (stamped 2026-07-04): 25 dependency-ordered issues LOO-155..LOO-179
+  under project milestones M0-M4, wired with Linear blocked-by relations.
+  - Unblocked (Todo): LOO-155 OpenTUI React/Solid spike, LOO-156 Bun+Seatbelt spike,
+    LOO-157 auth, LOO-158 delete omp surfaces, LOO-159 event taxonomy/bus/session log
+  - M0 loop+providers: LOO-160 loop core, LOO-162 Anthropic adapter, LOO-161 OpenAI adapter
+  - M1 tools+safety: LOO-163 core tools, LOO-164 approvals engine, LOO-165 Seatbelt sandbox
+  - M2 TUI: LOO-166 foundation, LOO-168 transcript, LOO-167 approval modal, LOO-169 CLI rebind
+  - M3 rebind+L0/L1: LOO-170 verifier, LOO-171 progression, LOO-172 tutor, LOO-173 gates,
+    LOO-174 L0-L1 packs+surfaces, LOO-176 headless e2e, LOO-175 exit gate (HITL)
+  - M4: LOO-177 scorecards, LOO-178 graduation export, LOO-179 curriculum re-scope (HITL)
   Decision: fully own harness — own agent loop + TUI, omp dropped. Repeals ARD §1/ADR-8/9
   for v-next. Evolve this repo; no fresh repo. Main bus (packs, verifier, progression,
   gates, curriculum) carries over. v1 omp-coupled work (LOO-148/149/150,
