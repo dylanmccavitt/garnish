@@ -24,3 +24,4 @@ tmp/
 # Garnish/Pi local runtime state
 .garnish/
 .omp/local/
+.garnish-proto/
