@@ -1,0 +1,19 @@
+id: l0-tutorial-proto
+title: Tutorial Island (proto)
+description: Prototype L0 path for first-party HarnessEvent rebinding.
+version: 0.1.0
+requires:
+  adapters: [pi]
+levels:
+  - id: tutorial-island
+    title: Tutorial Island (proto)
+    description: L0 proves event checks against the standalone taxonomy.
+    order: 0
+    quests: [look-around]
+    unlocks: [l0-hands]
+  - id: first-steps
+    title: First Steps (proto)
+    description: First hands-on edit; completing it earns the shell.
+    order: 1
+    quests: [first-edit]
+    unlocks: [l1-shell]

@@ -1,0 +1,9 @@
+{
+  "install": "bun install",
+  "terminals": [
+    {
+      "name": "garnish-proto-demo",
+      "command": "bun run proto:demo || true"
+    }
+  ]
+}

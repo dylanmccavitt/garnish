@@ -1,0 +1,13 @@
+id: l1-first-quest-proto
+title: First quest (proto)
+description: Prototype L1 path for command checks plus approval events.
+version: 0.1.0
+requires:
+  adapters: [pi]
+levels:
+  - id: first-quest
+    title: First quest (proto)
+    description: L1 requires approved shell use; the shell arrived with first-steps.
+    order: 2
+    quests: [fix-bug-prove-it]
+    unlocks: []

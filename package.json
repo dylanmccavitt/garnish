@@ -11,7 +11,10 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:e2e": "bun test tests/e2e/",
-    "garnish": "bun src/bin.ts"
+    "garnish": "bun src/bin.ts",
+    "proto": "bun proto/main.ts",
+    "proto:demo": "bun proto/demo.ts",
+    "proto:live": "bun proto/main.ts --live"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",

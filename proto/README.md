@@ -54,7 +54,7 @@ Spec under test: [PRD v2](https://linear.app/dylanmccavitt/document/prd-v2-garni
 bun run proto:demo     # scripted headless walkthrough — no key, no TTY needed
 bun run proto          # interactive TUI, scripted model (no key needed)
 bun run proto:live     # interactive TUI, real provider (needs ANTHROPIC_API_KEY or OPENAI_API_KEY)
-bun test proto         # slice smoke tests
+bun test ./proto       # slice smoke tests (Bun needs the ./ prefix; bare `proto` is a name filter)
 ```
 
 State is scratch-only: progression/session files live under `.garnish-proto/`
