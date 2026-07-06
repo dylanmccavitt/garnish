@@ -1,17 +1,13 @@
 /** @jsxImportSource @opentui/react */
 import { TextAttributes } from "@opentui/core";
 import type { GateView, Scorecard } from "../harness/types";
+import { buildAtlas, HINTS, inferCompletedQuestIds, isAtlasBossQuest, nextLockedUnlock, questHintById, unlockIdsFromTools, type AtlasLevel } from "../game/atlas";
 import { TUI_DIM, TUI_ORANGE, TUI_PANEL, TUI_RED, TUI_TEXT, type GameMoment } from "./juice";
 
-export const HINTS: Record<string, string> = {
-  "mise-en-place": "What's my quest?",
-  "look-around": "Look around",
-  "first-edit": "Record the first edit",
-  "fix-bug-prove-it": "Fix the greeter and prove it",
-};
+export { HINTS };
 
 export function questHint(quest: QuestView | null): string {
-  return quest === null ? "What's my quest?" : HINTS[quest.id] ?? "What's my quest?";
+  return questHintById(quest?.id);
 }
 
 export interface QuestView {
@@ -35,11 +31,22 @@ export function missionLevel(scorecard: Scorecard | null): { level: number; xp: 
   return { level: Math.max(1, Math.floor(xp / 500) + 1), xp };
 }
 
+function atlasForQuest(quest: QuestView | null, visibleGates: GateView[]): AtlasLevel[] {
+  const unlockedTools = new Set(visibleGates.filter((gate) => gate.visibility === "unlocked").map((gate) => gate.tool));
+  return buildAtlas({
+    completedQuests: inferCompletedQuestIds(quest?.id ?? null),
+    unlockedIds: unlockIdsFromTools(unlockedTools),
+    activeQuestId: quest?.id ?? null,
+  });
+}
+
 export function QuestLog({ quest, gates, scorecard, moments, flash }: { quest: QuestView | null; gates: GateView[]; scorecard: Scorecard | null; moments: GameMoment[]; flash: boolean }) {
   const checksDone = quest?.checks.filter((check) => check.done).length ?? 0;
   const checksTotal = quest?.checks.length ?? 0;
   const visibleGates = gates.filter((gate) => gate.visibility !== "hidden");
   const unlocked = visibleGates.filter((gate) => gate.visibility === "unlocked").length;
+  const atlas = atlasForQuest(quest, visibleGates);
+  const nextUnlock = nextLockedUnlock(atlas, new Set(visibleGates.filter((gate) => gate.visibility === "unlocked").map((gate) => gate.tool)));
   const newestMoment = moments.at(-1);
 
   return (
@@ -47,7 +54,10 @@ export function QuestLog({ quest, gates, scorecard, moments, flash }: { quest: Q
       <box title={`Quest ${checksDone}/${checksTotal}`} titleColor={flash ? TUI_ORANGE : TUI_DIM} style={{ border: true, paddingLeft: 1, paddingRight: 1, flexDirection: "column", minHeight: 8, backgroundColor: TUI_PANEL }}>
         {quest ? (
           <>
-            <text fg={TUI_ORANGE} attributes={TextAttributes.BOLD}>{quest.title}</text>
+            <box style={{ flexDirection: "row", alignItems: "center" }}>
+              {isAtlasBossQuest(quest.id) ? <text fg={TUI_ORANGE} attributes={TextAttributes.BOLD}>BOSS </text> : null}
+              <text fg={TUI_ORANGE} attributes={TextAttributes.BOLD}>{quest.title}</text>
+            </box>
             {quest.checks.map((check, index) => (
               <text key={`${check.line}:${index}`} fg={check.done ? TUI_ORANGE : TUI_TEXT}>
                 {check.done ? "☑" : "☐"} {check.line}
@@ -61,6 +71,9 @@ export function QuestLog({ quest, gates, scorecard, moments, flash }: { quest: Q
       </box>
       <box title={`Verbs ${unlocked}/${visibleGates.length}`} titleColor={flash ? TUI_ORANGE : TUI_DIM} style={{ border: true, paddingLeft: 1, paddingRight: 1, flexDirection: "column", minHeight: 7, backgroundColor: TUI_PANEL }}>
         {visibleGates.map((gate) => <GateRow key={gate.tool} gate={gate} />)}
+      </box>
+      <box title="UP NEXT" titleColor={flash ? TUI_ORANGE : TUI_DIM} style={{ border: true, paddingLeft: 1, paddingRight: 1, flexDirection: "column", minHeight: 3, backgroundColor: TUI_PANEL }}>
+        {nextUnlock ? <text fg={TUI_DIM}>{nextUnlock.rewards.join(" · ")} from {nextUnlock.levelTitle}</text> : <text fg={TUI_DIM}>all current verbs unlocked</text>}
       </box>
       <box title="Progress Log" titleColor={flash ? TUI_ORANGE : TUI_DIM} style={{ border: true, paddingLeft: 1, paddingRight: 1, flexDirection: "column", flexGrow: 1, backgroundColor: TUI_PANEL }}>
         {moments.length === 0 ? <text fg={TUI_DIM}>Waiting for game moments…</text> : null}

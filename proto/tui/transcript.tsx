@@ -64,7 +64,7 @@ export function reduceTranscript(model: TranscriptModel, event: HarnessEvent): T
       return pushEntry(model, {
         id: event.id,
         kind: "user",
-        title: `PLAYER · ${event.source}`,
+        title: `Player · ${event.source}`,
         body: event.text,
         tone: event.source === "player" ? "accent" : "normal",
       });
@@ -78,7 +78,7 @@ export function reduceTranscript(model: TranscriptModel, event: HarnessEvent): T
         next = pushEntry(next, {
           id: `${event.id}:thinking`,
           kind: "thinking",
-          title: "thinking",
+          title: "Thinking",
           body: preview(model.thinkingDraft, 120),
           tone: "dim",
         });
@@ -87,7 +87,7 @@ export function reduceTranscript(model: TranscriptModel, event: HarnessEvent): T
       next = pushEntry(next, {
         id: event.id,
         kind: "assistant",
-        title: `${MASCOT_NAME} ^`,
+        title: MASCOT_NAME,
         body,
       });
       return { ...next, assistantDraft: "", thinkingDraft: "" };
@@ -98,7 +98,7 @@ export function reduceTranscript(model: TranscriptModel, event: HarnessEvent): T
         {
           id: event.id,
           kind: "tool",
-          title: `TOOL CALL · ${event.tool}`,
+          title: `Tool · ${event.tool}`,
           body: preview(compact(event.input), 140),
           tone: "dim",
         },
@@ -107,15 +107,15 @@ export function reduceTranscript(model: TranscriptModel, event: HarnessEvent): T
       return pushEntry(model, {
         id: event.id,
         kind: "tool",
-        title: `APPROVAL · ${event.tool}`,
-        body: `${event.risk.toUpperCase()} ${event.command ?? ""}\n${event.explanation}`.trim(),
+        title: `Approval · ${event.tool}`,
+        body: `${event.risk.toUpperCase()} · ${event.command ?? ""}\n${event.explanation}`.trim(),
         tone: event.risk === "critical" || event.risk === "risky" ? "warn" : "accent",
       });
     case "tool.approval.resolved":
       return pushEntry(model, {
         id: event.id,
         kind: "tool",
-        title: `APPROVAL ${event.approved ? "APPROVED" : "DENIED"}`,
+        title: `Approval · ${event.approved ? "approved" : "denied"}`,
         body: event.reason ?? event.pattern ?? event.mode,
         tone: event.approved ? "accent" : "bad",
       });
@@ -123,7 +123,7 @@ export function reduceTranscript(model: TranscriptModel, event: HarnessEvent): T
       return pushEntry(model, {
         id: event.id,
         kind: "blocked",
-        title: `TEACHING BLOCK · ${event.tool}`,
+        title: `Teaching block · ${event.tool}`,
         body: event.teaching,
         tone: "bad",
       });
@@ -131,7 +131,7 @@ export function reduceTranscript(model: TranscriptModel, event: HarnessEvent): T
       return pushEntry(model, {
         id: event.id,
         kind: "tool",
-        title: `${event.isError ? "TOOL ERROR" : "TOOL OUTPUT"} · ${event.tool}`,
+        title: `${event.isError ? "Tool error" : "Tool output"} · ${event.tool}`,
         body: preview(event.output, 220),
         tone: event.isError ? "bad" : "normal",
       });
@@ -139,33 +139,33 @@ export function reduceTranscript(model: TranscriptModel, event: HarnessEvent): T
       return pushEntry(model, {
         id: event.id,
         kind: "file",
-        title: `FILE ${event.kind.toUpperCase()} · ${event.path}`,
-        body: `+ ${event.summary}`,
+        title: `File ${event.kind.toLowerCase()} · ${event.path}`,
+        body: event.summary,
         tone: "accent",
       });
     case "quest.completed":
       return pushEntry(model, {
         id: event.id,
         kind: "celebration",
-        title: `${xpBurst(1)} QUEST COMPLETE`,
-        body: `${xpBurst(2)} ${event.questId} · +${event.xp} XP`,
+        title: `Quest complete ${xpBurst(1)}`,
+        body: `${event.questId} · +${event.xp} XP`,
         tone: "accent",
       });
     case "unlock.applied":
       return pushEntry(model, {
         id: event.id,
         kind: "celebration",
-        title: `${xpBurst(0)} NEW VERB`,
+        title: `New verb ${xpBurst(0)}`,
         body: unlockBanner(event.tools).join("\n"),
         tone: "accent",
       });
     case "error":
-      return pushEntry(model, { id: event.id, kind: "system", title: "ERROR", body: event.message, tone: "bad" });
+      return pushEntry(model, { id: event.id, kind: "system", title: "Error", body: event.message, tone: "bad" });
     case "session.start":
       return pushEntry(model, {
         id: event.id,
         kind: "system",
-        title: "SESSION",
+        title: "Session",
         body: `${event.provider}${event.model ? `/${event.model}` : ""} in ${event.workspace}`,
         tone: "dim",
       });
@@ -173,7 +173,7 @@ export function reduceTranscript(model: TranscriptModel, event: HarnessEvent): T
       return pushEntry(model, {
         id: event.id,
         kind: "system",
-        title: "AUTH",
+        title: "Auth",
         body: `signed in · ${event.provider}${event.account ? ` · ${event.account}` : ""}`,
         tone: "accent",
       });
@@ -192,36 +192,37 @@ const colors: Record<NonNullable<TranscriptEntry["tone"]>, string> = {
 };
 
 function prefix(entry: TranscriptEntry): string {
-  if (entry.kind === "tool") return "◇";
-  if (entry.kind === "file") return "Δ";
-  if (entry.kind === "blocked") return "⛔";
-  if (entry.kind === "celebration") return "★";
-  if (entry.kind === "thinking") return "…";
-  return "";
+  if (entry.kind === "tool") return "tool";
+  if (entry.kind === "file") return "file";
+  if (entry.kind === "blocked") return "block";
+  if (entry.kind === "celebration") return "game";
+  if (entry.kind === "thinking") return "think";
+  if (entry.kind === "user") return "you";
+  return "sys";
 }
 
 function renderBody(entry: TranscriptEntry): string {
-  if (entry.kind === "thinking") return `dim signal · ${entry.body}`;
-  if (entry.kind === "blocked") return `red lesson · ${entry.body}`;
+  if (entry.kind === "thinking") return `signal · ${entry.body}`;
+  if (entry.kind === "blocked") return `lesson · ${entry.body}`;
   return entry.body;
 }
 
 export function Transcript({ model }: { model: TranscriptModel }) {
   const live: TranscriptEntry[] = [];
   if (model.thinkingDraft.trim()) {
-    live.push({ id: "thinking-live", kind: "thinking", title: "thinking…", body: preview(model.thinkingDraft, 120), tone: "dim" });
+    live.push({ id: "thinking-live", kind: "thinking", title: "Thinking…", body: preview(model.thinkingDraft, 120), tone: "dim" });
   }
   if (model.assistantDraft) {
-    live.push({ id: "assistant-live", kind: "assistant", title: `${MASCOT_NAME} ^ STREAM`, body: model.assistantDraft, tone: "normal" });
+    live.push({ id: "assistant-live", kind: "assistant", title: `${MASCOT_NAME} · streaming`, body: model.assistantDraft, tone: "normal" });
   }
   const rows = [...model.entries, ...live].slice(-30);
 
   return (
-    <scrollbox title="Transcript" titleColor={TUI_DIM} stickyScroll stickyStart="bottom" style={{ border: true, flexGrow: 1, paddingLeft: 1, paddingRight: 1 }}>
+    <scrollbox title="Activity Feed" titleColor={TUI_DIM} stickyScroll stickyStart="bottom" style={{ border: true, flexGrow: 1, paddingLeft: 1, paddingRight: 1 }}>
       {rows.map((entry) => (
         <box key={entry.id} style={{ flexDirection: "column", marginBottom: 1 }}>
-          <text fg={colors[entry.tone ?? "normal"]} attributes={entry.kind === "thinking" ? TextAttributes.DIM : undefined}>
-            {prefix(entry)} {entry.title}
+          <text fg={entry.tone === "accent" ? theme.accent : TUI_DIM} attributes={entry.kind === "thinking" ? TextAttributes.DIM : undefined}>
+            {prefix(entry).padEnd(5, " ")} · {entry.title}
           </text>
           <text fg={entry.kind === "thinking" ? TUI_DIM : colors[entry.tone ?? "normal"]}>{renderBody(entry)}</text>
         </box>

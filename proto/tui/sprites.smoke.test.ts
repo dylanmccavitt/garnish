@@ -1,27 +1,30 @@
 import { describe, expect, test } from "bun:test";
+import { PIXEL_SPRITES } from "./pixel-sprites";
 import { MASCOT_NAME, mascot, unlockBanner, xpBurst } from "./sprites";
 
 const poses = ["idle", "celebrate", "warn", "think"] as const;
 
-describe("retro sprites", () => {
-  test("mascot poses stay short and monospace-safe", () => {
+describe("monogrid pixel sprites", () => {
+  test("mascot text-mode rows are backed by baked pixel art", () => {
     expect(MASCOT_NAME).toBe("Sprig");
+    expect(mascot("idle")).toEqual([...PIXEL_SPRITES.sprigIdle.ansi]);
+    expect(mascot("celebrate")).toEqual([...PIXEL_SPRITES.sprigCelebrate.ansi]);
 
     for (const pose of poses) {
       const rows = mascot(pose);
-      const width = rows[0]?.length ?? 0;
+      const baked = pose === "celebrate" ? PIXEL_SPRITES.sprigCelebrate.ansi : PIXEL_SPRITES.sprigIdle.ansi;
 
-      expect(rows.length).toBeLessThanOrEqual(3);
-      expect(width).toBeGreaterThan(0);
-      expect(rows.every((row) => row.length === width)).toBe(true);
+      expect(rows).toEqual([...baked]);
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows.join("")).toContain("\u001B[");
       expect(rows.join("")).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
     }
   });
 
-  test("xp burst cycles through four text frames", () => {
+  test("xp burst cycles through restrained sparkle frames", () => {
     const frames = [xpBurst(0), xpBurst(1), xpBurst(2), xpBurst(3)];
 
-    expect(new Set(frames).size).toBe(4);
+    expect(frames).toEqual(["·", "•", "◦", "•"]);
     expect(xpBurst(4)).toBe(frames[0]);
     expect(xpBurst(-1)).toBe(frames[1]);
   });
@@ -29,9 +32,9 @@ describe("retro sprites", () => {
   test("unlock banner announces tool names", () => {
     const banner = unlockBanner(["edit", "bash"]);
 
-    expect(banner.length).toBeGreaterThanOrEqual(2);
-    expect(banner.length).toBeLessThanOrEqual(3);
-    expect(banner.every((row) => row.length === banner[0]!.length)).toBe(true);
+    expect(banner).toHaveLength(1);
+    expect(banner[0]).toBe("▸▸ NEW VERB · edit · bash ◂◂");
+    expect(banner.join("")).not.toMatch(/[░▒▓═]/);
     expect(banner.join("\n")).toContain("NEW VERB");
     expect(banner.join("\n")).toContain("edit");
     expect(banner.join("\n")).toContain("bash");

@@ -92,3 +92,24 @@ macOS under Seatbelt (`bun run proto:demo` → 12/12 PASS).
   omp-parity providers, retro green/purple palette, Sprig mascot, NEXT UP
   hints, mise-en-place quest completing off `auth.login`, celebrations with
   purple accents. 13/13 headless beats pass (4 quests, XP 40).
+
+## Proto-v3 wave addendum (pixel sprites + monogrid + atlas/bosses + saves)
+
+- **Codex imagegen → terminal sprite pipeline works**: `codex exec` (ChatGPT
+  auth, image_generation feature) produced 5 pixel-art PNGs; `scripts/
+  px2ansi.ts` downsamples (ffmpeg nearest-neighbor) and bakes half-block cell
+  data + raw-ANSI rows into `proto/tui/pixel-sprites.ts`. Roundtrip verified
+  by rebuilding a PNG from the baked cells. Rule: raw ANSI only in text-mode
+  surfaces; OpenTUI renders cellRows via styled chunks (PixelSpriteView).
+- **Resume surfaced three cross-session bugs** only visible by frame-checking
+  the recorded mp4: (1) the verifier's completed-set was session-scoped —
+  resumed saves re-ran finished quests (fixed: seed `initialCompleted` from
+  the progression fold in wire); (2) header LVL/XP derived from a scorecard
+  hack, not the save (fixed: `progress()` seam from progression state);
+  (3) the scripted model replayed its queue from turn 1 after resume,
+  desyncing story from saved progress (fixed: script segment selection by
+  completed-quest ids). Spec lesson for LOO-159/171: session resume and
+  progression resume are different axes and every consumer must say which
+  one it derives from.
+- Known cosmetic: input placeholder can show a stray typed char next to the
+  hint after fast tape input; not worth prototype time.

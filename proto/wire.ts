@@ -62,16 +62,21 @@ export interface WireOptions {
   prompter: ApprovalPrompter;
   /** scratch root; a temp dir is created when omitted */
   root?: string;
+  /** durable save root; keeps workspace, progression, and sessions across runs */
+  saveRoot?: string;
   model?: string;
   /** who the player signed in as; emitted as auth.login for tutorial checks */
   auth?: { provider: string; method: "oauth" | "api-key" | "scripted"; account?: string };
 }
 
 export async function wireHarness(opts: WireOptions): Promise<WiredHarness> {
-  const { workspace, sessionTemp } = scaffoldWorkspace(opts.root ? { root: opts.root } : {});
+  const scaffoldRoot = opts.saveRoot ?? opts.root;
+  const { workspace, sessionTemp } = scaffoldWorkspace(scaffoldRoot ? { root: scaffoldRoot } : {});
   const root = join(workspace, "..");
   const sessionId = crypto.randomUUID();
-  const sessionLogPath = join(root, ".garnish-proto", "sessions", `${sessionId}.jsonl`);
+  const sessionLogPath = opts.saveRoot
+    ? join(root, "sessions", `${sessionId}.jsonl`)
+    : join(root, ".garnish-proto", "sessions", `${sessionId}.jsonl`);
 
   const sink = createEventSink({ sessionId, logPath: sessionLogPath });
   const sandbox = sandboxAvailability();
@@ -93,6 +98,7 @@ export async function wireHarness(opts: WireOptions): Promise<WiredHarness> {
     questSource: defaultQuestPackDir(),
     workspace,
     onQuestComplete: (quest, xp) => progression.grantQuest(quest.id, xp),
+    initialCompleted: new Set(progression.state().completedQuests.map(String)),
   });
 
   const tutor = createTutorProvider({ verifier });

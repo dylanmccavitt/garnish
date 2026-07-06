@@ -1,7 +1,7 @@
 ---
 id: fix-bug-prove-it
 level: first-quest
-title: Fix the bug and prove it
+title: The Goodbye Greeter
 xp: 20
 required: true
 prereqs: []
@@ -13,7 +13,8 @@ checks:
   - type: event
     match: { event: tool.approval.resolved, approved: true }
 ---
-The scaffolded `src/greet.ts` says Goodbye when it should say Hello. Fix the
-greeter with the edit tool, then prove it with an approved shell command. The
-command check verifies the fix on disk and the approval event proves you
-exercised approval judgment.
+The scaffolded `src/greet.ts` is guarded by the Goodbye Greeter: it says
+Goodbye when it should say Hello. Fix the greeter with the edit tool, then
+prove the boss is beaten with an approved shell command. The command check
+verifies the fix on disk and the approval event proves you exercised approval
+judgment.

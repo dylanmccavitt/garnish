@@ -53,12 +53,23 @@ export function createProgression(opts: CreateProgressionOptions): ProgressionBr
   const eventFile = join(opts.root, ".garnish-proto", "progression", "events.jsonl");
   let events = readExistingEvents(eventFile);
   let snapshot = foldEvents(events, PROTO_GRAPH);
-  const notifiedUnlocks = new Set<string>(snapshot.unlockSet.features.map((feature) => `${feature}`));
+  const notifiedUnlocks = new Set<string>();
 
   function persist(): void {
     const dir = join(opts.root, ".garnish-proto", "progression");
     mkdirSync(dir, { recursive: true });
     writeFileSync(eventFile, events.map((event) => JSON.stringify(event)).join("\n") + (events.length > 0 ? "\n" : ""));
+  }
+
+  function notifySnapshotUnlocks(): void {
+    for (const feature of snapshot.unlockSet.features) {
+      const unlockId = `${feature}`;
+      if (notifiedUnlocks.has(unlockId)) {
+        continue;
+      }
+      notifiedUnlocks.add(unlockId);
+      opts.onUnlock(unlockId, TOOLS_BY_UNLOCK[unlockId] ?? []);
+    }
   }
 
   function applyDerivedUnlocks(): void {
@@ -70,17 +81,11 @@ export function createProgression(opts: CreateProgressionOptions): ProgressionBr
     events = [...events, ...additions];
     snapshot = foldEvents(events, PROTO_GRAPH);
     persist();
-    for (const event of additions) {
-      const unlockId = `${event.target.id}`;
-      if (notifiedUnlocks.has(unlockId)) {
-        continue;
-      }
-      notifiedUnlocks.add(unlockId);
-      opts.onUnlock(unlockId, TOOLS_BY_UNLOCK[unlockId] ?? []);
-    }
+    notifySnapshotUnlocks();
   }
 
   applyDerivedUnlocks();
+  notifySnapshotUnlocks();
 
   return {
     grantQuest(questId: string, xp: number): void {

@@ -36,6 +36,8 @@ export interface StartVerifierOptions {
   readonly questSource: QuestSource;
   readonly workspace: string;
   readonly onQuestComplete: (quest: QuestView, xp: number) => void;
+  /** quests already completed in a prior session (from the progression fold) */
+  readonly initialCompleted?: ReadonlySet<string>;
 }
 
 const QUEST_PACK_DIR = new URL("./packs/", import.meta.url).pathname;
@@ -69,7 +71,7 @@ function isStringQuestSourceArray(source: readonly string[] | readonly QuestGrap
 export async function startVerifier(opts: StartVerifierOptions): Promise<VerifierBridge> {
   const graphs = await loadProtoQuestGraphs(opts.questSource);
   const quests = graphs.flatMap((graph) => graph.levels.flatMap((level) => level.quests.map((id) => graph.questNodes[id]))).filter(Boolean);
-  const completed = new Set<string>();
+  const completed = new Set<string>(opts.initialCompleted ?? []);
   const events: VerifierEvent[] = [];
   let stopped = false;
   let lastState: CheckStateView | null = null;

@@ -26,6 +26,15 @@ describe("onboarding wizard pure seams", () => {
     expect(onboarding.choiceFromInput("stew", providers)).toBeNull();
   });
 
+  test("renders resume menu and maps continue/new choices", () => {
+    const menu = onboarding.renderResumeMenu({ provider: "demo-kitchen", method: "scripted", account: "chef@example.test", createdAt: 1 }, { quests: 3, xp: 20 });
+    expect(menu).toContain("Continue as chef@example.test — 3 quests done · 20 XP");
+    expect(menu).toContain("New game");
+    expect(onboarding.resumeChoiceFromInput("1")).toBe("continue");
+    expect(onboarding.resumeChoiceFromInput("2")).toBe("new");
+    expect(onboarding.resumeChoiceFromInput("nope")).toBeNull();
+  });
+
   test("skip policy is silent for disabled env or non-tty stdin", () => {
     expect(onboarding.shouldSkipOnboarding({ GARNISH_PROTO_ONBOARD: "0" }, { isTTY: true })).toBe(true);
     expect(onboarding.shouldSkipOnboarding({}, { isTTY: false })).toBe(true);

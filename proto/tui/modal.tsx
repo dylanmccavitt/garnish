@@ -41,9 +41,9 @@ export function stepApprovalModal(state: ApprovalModalState, action: ModalAction
 }
 
 export const riskColors: Record<RiskTier, string> = {
-  safe: theme.primary,
+  safe: theme.text,
   moderate: theme.amber,
-  risky: "#FF9F43",
+  risky: theme.amber,
   critical: TUI_RED,
 };
 
@@ -63,19 +63,20 @@ export function ApprovalModal({ state }: { state: ApprovalModalState | null }) {
         top: 4,
         height: 13,
         border: true,
-        borderStyle: "double",
+        borderStyle: "single",
+        borderColor: theme.border,
         paddingLeft: 2,
         paddingRight: 2,
         flexDirection: "column",
-        backgroundColor: TUI_BG,
+        backgroundColor: theme.panel,
       }}
     >
-      <text fg={riskColors[request.risk]} attributes={TextAttributes.BOLD}>{`${request.risk.toUpperCase()} · ${request.tool}`}</text>
+      <text fg={riskColors[request.risk]} attributes={request.risk === "risky" || request.risk === "critical" ? TextAttributes.BOLD : undefined}>{`${request.risk.toUpperCase()} · ${request.tool}`}</text>
       <text fg={TUI_TEXT}>{request.command}</text>
-      <text fg={theme.accent}>{request.explanation}</text>
+      <text fg={TUI_DIM}>{request.explanation}</text>
       <text fg={TUI_DIM}>{`Pattern: ${pattern}`}</text>
       {state.mode === "reason" ? (
-        <box title="Reason" titleColor={theme.accent} style={{ border: true, height: 3 }}>
+        <box title="Reason" titleColor={theme.accent} style={{ border: true, borderColor: theme.border, height: 3, backgroundColor: TUI_BG }}>
           <input focused placeholder="Why deny? Enter submits" value={state.reason} />
         </box>
       ) : (

@@ -1,6 +1,7 @@
 import { createInterface } from "node:readline/promises";
 
 import { listAuthProviders, startLogin, type AuthProviderInfo, type AuthResult } from "./auth";
+import { resetSave, saveProfile, type Profile } from "./save";
 import { mascot, MASCOT_NAME } from "./tui/sprites";
 import { theme } from "./tui/theme";
 
@@ -10,6 +11,17 @@ export interface OnboardingResult {
   authProvider: string;
   method: "oauth" | "api-key" | "scripted";
   account?: string;
+}
+
+export interface ResumeStats {
+  quests: number;
+  xp: number;
+}
+
+export interface RunOnboardingOptions {
+  profile?: Profile | null;
+  resume?: ResumeStats | null;
+  saveRoot?: string;
 }
 
 export type ProviderChoice =
@@ -64,6 +76,22 @@ export function renderProviderMenu(providers: readonly AuthProviderInfo[]): stri
   return rows.join("\n");
 }
 
+export function renderResumeMenu(profile: Profile, resume: ResumeStats): string {
+  const account = profile.account ?? profile.provider;
+  return [
+    color("Found a saved station:", theme.text, ANSI_BOLD),
+    color(`1) Continue as ${account} — ${resume.quests} quests done · ${resume.xp} XP`, theme.primary, ANSI_BOLD),
+    `2) New game ${color("(wipes the save)", theme.amber)}`,
+  ].join("\n");
+}
+
+export function resumeChoiceFromInput(input: string): "continue" | "new" | null {
+  const selected = Number.parseInt(input.trim(), 10);
+  if (selected === 1) return "continue";
+  if (selected === 2) return "new";
+  return null;
+}
+
 export function choiceFromInput(input: string, providers: readonly AuthProviderInfo[]): ProviderChoice | null {
   const authProviders = providers.filter((provider) => provider.id !== DEMO_PROVIDER_ID);
   const selected = Number.parseInt(input.trim(), 10);
@@ -90,6 +118,16 @@ async function promptLine(question: string): Promise<string> {
     return await rl.question(question);
   } finally {
     rl.close();
+  }
+}
+
+async function chooseResume(profile: Profile, resume: ResumeStats): Promise<"continue" | "new"> {
+  for (;;) {
+    console.log(renderResumeMenu(profile, resume));
+    const answer = await promptLine(color("Pick a number › ", theme.primary));
+    const choice = resumeChoiceFromInput(answer);
+    if (choice !== null) return choice;
+    console.log(color("That ticket is not on the rail. Pick 1 or 2.", theme.amber));
   }
 }
 
@@ -141,24 +179,39 @@ async function runRealCeremony(provider: AuthProviderInfo): Promise<OnboardingRe
   }
 }
 
-export async function runOnboarding(): Promise<OnboardingResult> {
+export async function runOnboarding(opts: RunOnboardingOptions = {}): Promise<OnboardingResult> {
+  const resumeProfile = opts.profile ?? null;
+  const resume = opts.resume ?? null;
   if (shouldSkipOnboarding(process.env, process.stdin)) {
+    if (resumeProfile !== null) {
+      return { authProvider: resumeProfile.provider, method: resumeProfile.method, account: resumeProfile.account };
+    }
     return { authProvider: DEMO_PROVIDER_ID, method: "scripted" };
   }
 
   console.log(renderWelcomeCard());
+  if (resumeProfile !== null && resume !== null) {
+    const resumeChoice = await chooseResume(resumeProfile, resume);
+    if (resumeChoice === "continue") {
+      return { authProvider: resumeProfile.provider, method: resumeProfile.method, account: resumeProfile.account };
+    }
+    if (opts.saveRoot !== undefined) resetSave(opts.saveRoot);
+  }
+
   const providers = listAuthProviders();
   for (;;) {
     const choice = await chooseProvider(providers);
     if (choice.type === "demo") {
       console.log(color("Demo Kitchen selected. No account needed — chef's table is ready.", theme.primary, ANSI_BOLD));
       const result = await runMockCeremony({ id: DEMO_PROVIDER_ID, label: "Demo Kitchen", kind: "mock", ported: true });
+      if (opts.saveRoot !== undefined) saveProfile(opts.saveRoot, { provider: result.authProvider, method: result.method, account: result.account, createdAt: Date.now() });
       console.log(renderTipsCard());
       return result;
     }
 
     const result = choice.provider.kind === "mock" ? await runMockCeremony(choice.provider) : await runRealCeremony(choice.provider);
     if (result !== null) {
+      if (opts.saveRoot !== undefined) saveProfile(opts.saveRoot, { provider: result.authProvider, method: result.method, account: result.account, createdAt: Date.now() });
       console.log(renderTipsCard());
       return result;
     }

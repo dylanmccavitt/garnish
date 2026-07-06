@@ -8,14 +8,21 @@
 import { getStoredAuth } from "./auth";
 import type { ApprovalDecision, ApprovalRequest, ProviderName, ScriptedTurn, StreamFn } from "./harness/types";
 import { scriptedStream } from "./harness/scripted";
-import { runOnboarding } from "./onboarding";
+import { createProgression } from "./game";
+import { runOnboarding, type ResumeStats } from "./onboarding";
 import { anthropicStream, openaiStream, resolveAuth } from "./providers";
+import { loadProfile, resetSave, resolveSaveRoot } from "./save";
 import { startTui } from "./tui";
 import { wireHarness } from "./wire";
 
 const args = new Set(Bun.argv.slice(2));
 const live = args.has("--live");
 let provider: "anthropic" | "openai" = args.has("--provider=openai") || (Bun.argv.includes("--provider") && Bun.argv[Bun.argv.indexOf("--provider") + 1] === "openai") ? "openai" : "anthropic";
+const saveRoot = resolveSaveRoot();
+if (args.has("--reset")) resetSave(saveRoot);
+const profile = loadProfile(saveRoot);
+const resumeState = profile === null ? null : createProgression({ root: saveRoot, onUnlock() {} }).state();
+const resume: ResumeStats | null = resumeState === null ? null : { quests: resumeState.completedQuests.length, xp: resumeState.xpTotal };
 
 // The scripted model ignores what you type and advances the L0→L1 story one
 // beat per message — good enough to feel the game surfaces without a key.
@@ -42,7 +49,7 @@ const script: ScriptedTurn[] = [
   { text: "That's the whole arc — quests, blocks, approvals, unlocks, celebrations. Keep chatting or Ctrl+C out." },
 ];
 
-const onboarding = await runOnboarding();
+const onboarding = await runOnboarding({ profile, resume, saveRoot });
 if (live && (onboarding.authProvider === "anthropic" || onboarding.authProvider === "openai") && getStoredAuth(onboarding.authProvider) !== null) {
   provider = onboarding.authProvider;
 }
@@ -58,7 +65,11 @@ if (live) {
   streamFn = provider === "anthropic" ? anthropicStream({ apiKey: auth.apiKey }) : openaiStream({ apiKey: auth.apiKey });
   providerName = provider;
 } else {
-  streamFn = scriptedStream(script);
+  // Resume-aware story: skip scripted segments for quests already completed in
+  // the save, so the model picks up where the last session left off.
+  const done = new Set((resumeState?.completedQuests ?? []).map(String));
+  const scriptStart = done.has("fix-bug-prove-it") ? script.length - 1 : done.has("first-edit") ? 5 : done.has("look-around") ? 3 : 0;
+  streamFn = scriptedStream(script.slice(scriptStart));
 }
 
 // TUI provides the prompter, but the harness needs one at wire time — proxy it.
@@ -66,7 +77,7 @@ let tuiPrompter: ((req: ApprovalRequest) => Promise<ApprovalDecision>) | null = 
 const prompter = (req: ApprovalRequest): Promise<ApprovalDecision> =>
   tuiPrompter ? tuiPrompter(req) : Promise.resolve({ approved: false, mode: "deny", reason: "UI not ready" });
 
-const wired = await wireHarness({ streamFn, provider: providerName, prompter, auth: { provider: onboarding.authProvider, method: onboarding.method, account: onboarding.account } });
+const wired = await wireHarness({ streamFn, provider: providerName, prompter, saveRoot, auth: { provider: onboarding.authProvider, method: onboarding.method, account: onboarding.account } });
 
 const tui = startTui({
   bus: wired.sink.bus,
@@ -75,11 +86,16 @@ const tui = startTui({
   gateViews: () => wired.gateViews(),
   questView: () => wired.questView(),
   scorecard: () => wired.scorecard(),
+  progress: () => {
+    const state = wired.progression.state();
+    return { xp: state.xpTotal, level: state.completedLevels.length + 1 };
+  },
   meta: { workspace: wired.workspace, provider: providerName, model: wired.harness.config.model },
   onExit: () => {
     tui.stop();
     wired.stop();
     console.log(`session log: ${wired.sessionLogPath}`);
+    console.log(`save root: ${saveRoot}`);
     process.exit(0);
   },
 });

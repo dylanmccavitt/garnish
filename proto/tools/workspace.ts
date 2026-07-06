@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -25,6 +25,10 @@ export function scaffoldWorkspace(opts: ScaffoldWorkspaceOptions = {}): Scaffold
 
   const workspace = join(root, "workspace");
   const sessionTemp = join(root, "session-temp");
+  if (existsSync(join(workspace, ".git"))) {
+    mkdirSync(sessionTemp, { recursive: true });
+    return { workspace, sessionTemp };
+  }
   mkdirSync(join(workspace, "src"), { recursive: true });
   mkdirSync(sessionTemp, { recursive: true });
 

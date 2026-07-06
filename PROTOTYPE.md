@@ -78,20 +78,32 @@ bun run proto
 
 No API key is needed. The model is scripted; the value here is the harness/TUI feel.
 
+**Progress is a real save.** State lives under `~/.garnish-proto` (override with
+`GARNISH_PROTO_HOME`; wipe with `bun run proto -- --reset`). On relaunch the
+wizard offers `Continue` (kept XP, quests, unlocked verbs, workspace) or
+`New game`.
+
 **It opens with the onboarding wizard** (text-mode, before the TUI): Sprig the
-mascot welcomes you, then a "pantry pass" menu lists sign-in options — omp-parity
-OAuth providers (Anthropic PKCE, OpenAI Codex device-code; Cursor/Copilot/
-Gemini/Kimi/xAI marked coming soon) plus `1) Demo Kitchen` (no account). Press
-`1` + Enter for the offline path: a fake device-code ceremony signs you in and
-completes the "Mise en place" tutorial quest via the `auth.login` event.
+pixel mascot welcomes you, then a "pantry pass" menu lists sign-in options —
+omp-parity OAuth providers (Anthropic PKCE, OpenAI Codex device-code;
+Cursor/Copilot/Gemini/Kimi/xAI marked coming soon) plus `1) Demo Kitchen`
+(no account). Press `1` + Enter for the offline path: a fake device-code
+ceremony signs you in and completes the "Mise en place" tutorial quest via the
+`auth.login` event.
 
-Mission-Control layout (retro green/purple):
+Mission-Control layout (clean monogrid; sprites carry the color — pixel art
+generated with Codex imagegen, baked to terminal half-blocks):
 
-- **Header bar:** brand + workspace + Sprig, `LVL · XP · TOK` metrics.
+- **Header bar:** pixel Sprig + workspace, real `LVL · XP · TOK` metrics.
+- **Objective banner:** always-visible `OBJECTIVE ▸ …` (or `BOSS FIGHT ▸ …`)
+  naming the active quest and exactly what to try.
 - **Transcript (main, left):** flowing chat stuck to the bottom — streaming
-  tokens, tool chips, teaching blocks, sparkle/NEW-VERB celebrations inline.
+  tokens, tool chips, teaching blocks, clean celebration rows inline.
 - **Right rail:** Quest (checks + `NEXT UP` hint), Verbs (skill tree with
-  teased locks), Progress Log (game moments).
+  teased locks), `UP NEXT` unlock preview, Progress Log (game moments).
+- **Atlas (`Tab`):** full-screen map — levels, quests (✓/▸), unlock reward
+  chips, BOSS rows with pixel boss portraits (L1's boss is The Goodbye
+  Greeter), plus teaser levels (Lore Library, Skill Forge).
 - **Bottom:** status word (`AWAITING INPUT / STREAMING / RUNNING TOOL /
   AWAITING APPROVAL`) + input box whose placeholder tells you what to type
   next, then a dim hotkey bar.

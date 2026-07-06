@@ -36,12 +36,12 @@ export const emptyStatus = (): StatusModel => ({
 });
 
 export const glyphLegend: Partial<Record<HarnessEventType, { glyph: string; color: string; label: string }>> = {
-  "quest.completed": { glyph: "★", color: theme.primary, label: "Quest" },
-  "unlock.applied": { glyph: "⌘", color: theme.primary, label: "Unlock" },
+  "quest.completed": { glyph: "✓", color: theme.text, label: "Quest" },
+  "unlock.applied": { glyph: "▸", color: theme.text, label: "Unlock" },
   "tool.blocked": { glyph: "!", color: theme.red, label: "Blocked" },
-  "file.edited": { glyph: "Δ", color: theme.primary, label: "File" },
-  "tool.approval.resolved": { glyph: "✔", color: theme.accent, label: "Approval" },
-  "auth.login": { glyph: "⚿", color: theme.accent, label: "Auth" },
+  "file.edited": { glyph: "Δ", color: theme.text, label: "File" },
+  "tool.approval.resolved": { glyph: "◆", color: theme.accent, label: "Approval" },
+  "auth.login": { glyph: "•", color: theme.dim, label: "Auth" },
   error: { glyph: "!", color: theme.red, label: "Error" },
 };
 

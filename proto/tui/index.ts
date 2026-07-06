@@ -17,6 +17,8 @@ export interface StartTuiOpts {
   gateViews(): GateView[];
   questView(): { id: string; title: string; checks: Array<{ line: string; done: boolean }> } | null;
   scorecard(): Scorecard | null;
+  /** real progression state (save-backed); header falls back to a scorecard hack when absent */
+  progress?(): { xp: number; level: number };
   onExit(): void;
   meta?: TuiMeta;
 }

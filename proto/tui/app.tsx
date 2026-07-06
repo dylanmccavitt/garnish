@@ -5,8 +5,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ApprovalDecision, EventBus, GateView, Scorecard } from "../harness/types";
 import { ApprovalModal, type ApprovalModalState, stepApprovalModal } from "./modal";
 import { decayMoments, emptyStatus, momentFromEvent, reduceStatus, TUI_BG, TUI_DIM, TUI_ORANGE, TUI_PANEL, TUI_RED, TUI_TEXT, type GameMoment, type MissionStatus, type StatusModel } from "./juice";
+import { activeAtlasQuest, buildAtlas, inferCompletedQuestIds, isAtlasBossQuest, unlockIdsFromTools } from "../game/atlas";
+import { AtlasOverlay } from "./atlas";
+import { PIXEL_SPRITES } from "./pixel-sprites";
+import { PixelSpriteView } from "./pixel";
 import { missionLevel, questHint, QuestLog, type QuestView } from "./questlog";
-import { MASCOT_NAME, mascot } from "./sprites";
+import { MASCOT_NAME } from "./sprites";
 import { Transcript, emptyTranscript, reduceTranscript, type TranscriptModel } from "./transcript";
 
 export interface TuiMeta {
@@ -22,6 +26,7 @@ export interface TuiAppOpts {
   gateViews(): GateView[];
   questView(): QuestView | null;
   scorecard(): Scorecard | null;
+  progress?(): { xp: number; level: number };
   onExit(): void;
   approval: ApprovalController;
   meta?: TuiMeta;
@@ -83,6 +88,7 @@ export function TuiApp(opts: TuiAppOpts) {
   const [moments, setMoments] = useState<GameMoment[]>([]);
   const [status, setStatus] = useState<StatusModel>(() => emptyStatus());
   const [frame, setFrame] = useState(0);
+  const [atlasOpen, setAtlasOpen] = useState(false);
 
   const timeline = useTimeline({
     duration: 1000,
@@ -144,6 +150,10 @@ export function TuiApp(opts: TuiAppOpts) {
       }
       return;
     }
+    if (key.name === "tab") {
+      setAtlasOpen((current) => !current);
+      return;
+    }
     if (key.name === "escape") {
       opts.abort();
       return;
@@ -155,26 +165,41 @@ export function TuiApp(opts: TuiAppOpts) {
   });
 
   const flash = useMemo(() => moments.some((moment) => moment.ttl > 10), [moments, frame]);
-  const level = missionLevel(scorecard);
+  const level = opts.progress?.() ?? missionLevel(scorecard);
   const provider = opts.meta?.model ? `${opts.meta.provider}/${opts.meta.model}` : opts.meta?.provider ?? "provider pending";
 
   const activeHint = questHint(quest);
-  const idleMascot = mascot("idle");
+  const atlasLevels = useMemo(() => {
+    const unlockedTools = new Set(gates.filter((gate) => gate.visibility === "unlocked").map((gate) => gate.tool));
+    return buildAtlas({
+      completedQuests: inferCompletedQuestIds(quest?.id ?? null),
+      unlockedIds: unlockIdsFromTools(unlockedTools),
+      activeQuestId: quest?.id ?? null,
+    });
+  }, [gates, quest]);
+  const objectiveQuest = activeAtlasQuest(atlasLevels);
+  const objectiveLabel = objectiveQuest && isAtlasBossQuest(objectiveQuest.id) ? "BOSS FIGHT" : "OBJECTIVE";
+  const objectiveTitle = objectiveQuest?.title ?? quest?.title ?? "All current quests complete";
+  const objectiveHint = objectiveQuest?.hint ?? activeHint;
 
   return (
     <box style={{ width: "100%", height: "100%", flexDirection: "column", backgroundColor: TUI_BG }}>
       <box style={{ height: 3, flexDirection: "row", justifyContent: "space-between", backgroundColor: TUI_BG }}>
         <box style={{ width: 18, flexDirection: "column" }}>
-          {idleMascot.map((line, index) => <text key={`${line}:${index}`} fg={TUI_ORANGE}>{line}</text>)}
+          <PixelSpriteView sprite={PIXEL_SPRITES.sprigIdle} />
         </box>
         <box style={{ flexGrow: 1, flexDirection: "column" }}>
           <text fg={TUI_ORANGE} attributes={TextAttributes.BOLD}>⁙ Garnish  {workspaceLabel(opts.meta?.workspace)} · {MASCOT_NAME} on expo</text>
-          <text fg={TUI_DIM}>NEXT UP try: {activeHint}</text>
+          <text fg={TUI_DIM}>Tab Atlas · NEXT UP try: {activeHint}</text>
         </box>
         <box style={{ width: 38, flexDirection: "column", alignItems: "flex-end" }}>
           <text fg={TUI_DIM}>LVL {level.level} · XP {level.xp} · TOK {tokenLabel(scorecard)}</text>
           <text fg={TUI_DIM}>{provider}</text>
         </box>
+      </box>
+      <box style={{ height: 1, flexDirection: "row", backgroundColor: TUI_PANEL, paddingLeft: 1 }}>
+        <text fg={TUI_ORANGE} attributes={TextAttributes.BOLD}>{objectiveLabel} ▸ </text>
+        <text fg={TUI_ORANGE}>{objectiveTitle} — {objectiveHint}</text>
       </box>
       <box style={{ flexGrow: 1, flexDirection: "row" }}>
         <box style={{ width: "65%", flexDirection: "column" }}>
@@ -182,10 +207,11 @@ export function TuiApp(opts: TuiAppOpts) {
         </box>
         <QuestLog quest={quest} gates={gates} scorecard={scorecard} moments={moments} flash={flash} />
       </box>
-      <StatusInput status={status} input={input} setInput={setInput} focused={modal === null} placeholder={`try: ${activeHint}`} />
+      <StatusInput status={status} input={input} setInput={setInput} focused={modal === null && !atlasOpen} placeholder={`try: ${activeHint}`} />
       <box style={{ height: 1, flexDirection: "row", justifyContent: "center", backgroundColor: TUI_BG }}>
-        <text fg={TUI_DIM}>Enter Send · Esc Abort · a/p/d/r Approvals · Ctrl+C Quit</text>
+        <text fg={TUI_DIM}>Tab Atlas · Enter Send · Esc Abort · a/p/d/r Approvals · Ctrl+C Quit</text>
       </box>
+      <AtlasOverlay open={atlasOpen} levels={atlasLevels} />
       <ApprovalModal state={modal} />
     </box>
   );
