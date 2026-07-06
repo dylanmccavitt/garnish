@@ -137,6 +137,7 @@ export type HarnessEventPayload =
   | { type: "turn.start"; turn: number }
   | { type: "turn.end"; turn: number; stopReason: StopReason }
   | { type: "message.user"; source: UserSource; text: string }
+  | { type: "auth.login"; provider: string; method: "oauth" | "api-key" | "scripted"; account?: string }
   | { type: "assistant.delta"; text: string }
   | { type: "assistant.thinking.delta"; text: string }
   | { type: "assistant.end"; message: AssistantMessage; usage?: Usage }

@@ -29,6 +29,12 @@ Repo-specific skills and agents live in `.agents/skills/` and `.agents/agents/`.
   There is no `node_modules`-vs-Bun ambiguity: use `bun` for everything. Standard
   commands live in `.agents/envelope/commands.md` and `package.json` scripts.
 - There is **no lint script**; `bun run typecheck` (`tsc --noEmit`) is the static gate.
+- **Desktop-tab / non-login terminals do NOT source `~/.bashrc`** — if `bun` is
+  "command not found", run `export PATH="$HOME/.bun/bin:$PATH"` first; if bun is
+  genuinely absent, `curl -fsSL https://bun.sh/install | bash` then re-export.
+  `.cursor/environment.json` self-heals this for its own install/terminals.
+- Agent-created checkouts often have **no upstream tracking**: bare `git pull`
+  fails — use `git pull origin <branch>` (or `git branch --set-upstream-to=origin/<branch>`).
 - Running the CLI end-to-end via `garnish init` requires an **external certified Pi
   runtime binary `omp` (version `16.2.13`)** that is *not* part of this repo. Without
   it, `init` fails at the version handshake and `status`/`quest` report "not
