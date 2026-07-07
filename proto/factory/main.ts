@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 import type { ApprovalDecision, ApprovalRequest, ProviderName, ScriptedTurn, StreamFn } from "../harness/types";
@@ -6,6 +7,7 @@ import { scriptedStream } from "../harness/scripted";
 import { startTui } from "../tui/variants/factory";
 import { GREETER_BUG_FAMILY } from "./ore";
 import type { HandFix, TaskItem } from "./types";
+import { runWorldMenu, worldRoot } from "./menu";
 import { wireFactory } from "./wire";
 
 const script: ScriptedTurn[] = [
@@ -31,7 +33,37 @@ const prompter = (req: ApprovalRequest): Promise<ApprovalDecision> => {
   return Promise.resolve({ approved: false, mode: "deny", reason: `UI not ready for ${req.tool}` });
 };
 
-const wired = await wireFactory({ streamFn, provider, prompter });
+async function selectWorld(args: string[], root: string): Promise<{ root: string; name: string } | null> {
+  const worldName = worldNameFromArgs(args);
+  if (worldName !== null) return worldRoot(root, worldName);
+  return runWorldMenu({ saveRoot: root });
+}
+
+function worldNameFromArgs(args: string[]): string | null {
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--world") {
+      const value = args[index + 1];
+      if (value === undefined || value.trim().length === 0) throw new Error("--world requires a name");
+      return value;
+    }
+    if (arg.startsWith("--world=")) {
+      const value = arg.slice("--world=".length);
+      if (value.trim().length === 0) throw new Error("--world requires a name");
+      return value;
+    }
+  }
+  return null;
+}
+
+const saveRoot = process.env.GARNISH_PROTO_HOME ?? join(homedir(), ".garnish-proto");
+const selectedWorld = await selectWorld(process.argv.slice(2), saveRoot);
+if (selectedWorld === null) {
+  console.log("goodbye — factory sleeping");
+  process.exit(0);
+}
+
+const wired = await wireFactory({ streamFn, provider, prompter, root: selectedWorld.root, worldName: selectedWorld.name });
 
 function transcript(text: string): void {
   wired.sink.emit({ type: "message.user", source: "tutor", text });
@@ -181,6 +213,10 @@ tui = startTui({
   },
 });
 tuiPrompter = tui.prompter;
+// deferred: the OpenTUI renderer boots async; an immediate emit races the app's bus subscribe
+setTimeout(() => {
+  transcript("SPRIG: bare harness online — ore waits. Type /mine to hand-craft item-1 (hints live under the input).");
+}, 800);
 
 console.log(`garnish factory TUI — provider=${provider}`);
 console.log("commands: /mine /cat /grep /run /fix /paste /build /forge /wire /power /feed /end");

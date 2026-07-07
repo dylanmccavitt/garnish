@@ -28,6 +28,12 @@ const SPECS: SpriteSpec[] = [
   { name: "door", file: "door.png", size: 12 },
   { name: "medal", file: "medal.png", size: 12 },
   { name: "coin", file: "coin.png", size: 10 },
+  { name: "minerDrill", file: "machine-miner.png", size: 16 },
+  { name: "routingBelt", file: "machine-belt.png", size: 16 },
+  { name: "assembler", file: "machine-assembler.png", size: 16 },
+  { name: "circuitPole", file: "machine-circuit.png", size: 16 },
+  { name: "orePatch", file: "ore-patch.png", size: 12 },
+  { name: "powerBolt", file: "power-bolt.png", size: 10 },
 ];
 
 const ASSETS = join(import.meta.dir, "..", "proto", "assets");

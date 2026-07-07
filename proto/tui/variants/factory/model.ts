@@ -1,5 +1,6 @@
 import type { HarnessEvent, MachineKind } from "../../../harness/types";
 import type { FactoryState, ItemStatus, MachineState, PowerState, WorkMode } from "../../../factory/types";
+import type { MissionStatus } from "../../juice";
 import { FACTORY_VARIANT_PLAN } from "../../../factory/types";
 
 export type FactoryStage = 0 | 1 | 2;
@@ -37,6 +38,19 @@ export interface FactoryMiniMapModel {
   machines: MiniMapMachineNode[];
   oreRemaining: number;
   sciencePacks: Record<string, number>;
+}
+
+export interface FloorNode {
+  id: "ore" | "miner" | "belt" | "assembler" | "circuit" | "ship";
+  label: string;
+  built: boolean;
+  active: boolean;
+  detail: string;
+}
+
+export interface FloorModel {
+  nodes: FloorNode[];
+  beltDot: { itemId: string; offset: number } | null;
 }
 
 const ZERO_POWER: PowerState = {
@@ -247,6 +261,73 @@ export function powerMeter(hud: FactoryHudState, width: number): string {
   const bar = `${"█".repeat(filled)}${"░".repeat(cells - filled)}`;
   const state = hud.power.brownedOut || hud.brownoutFlash ? " BROWNOUT" : hud.power.shiftActive ? " SHIFT" : " IDLE";
   return `[${bar}] ⚡ ${used}/${budget}${state}`;
+}
+
+const FLOOR_LANE_WIDTH = 12;
+
+const RESEARCH_HINTS: Array<{ kind: MachineKind; command: string }> = [
+  { kind: "bare-agent", command: "research complete — /build bare-agent" },
+  { kind: "routing-belt", command: "research complete — /build routing-belt" },
+  { kind: "skill", command: "research complete — /forge greeter-fix" },
+  { kind: "policy-circuit", command: "research complete — /wire \"read *\" — author your first allow rule" },
+];
+
+export function nextActionHint(state: FactoryState): string | null {
+  if (state.power.brownedOut) return "⚡ brownout — /feed 50000 to restart the belt";
+
+  const current = state.currentItemId === null
+    ? null
+    : state.items.find((item) => item.id === state.currentItemId && item.status === "in-progress") ?? null;
+  const queued = state.items.filter((item) => item.status === "queued");
+  const allPlannedOreShipped = state.shippedCount >= FACTORY_VARIANT_PLAN.length && state.items.every((item) => item.status === "shipped");
+  if (current === null && queued.length === 0 && allPlannedOreShipped) return "queue clear — /end for the shift report";
+
+  for (const hint of RESEARCH_HINTS) {
+    const researched = state.research.some((research) => research.unlocks === hint.kind && research.done);
+    const built = state.machines.some((machine) => machine.kind === hint.kind);
+    if (researched && !built) return hint.command;
+  }
+
+  const beltBuilt = state.machines.some((machine) => machine.kind === "routing-belt");
+  if (beltBuilt && !state.power.shiftActive && queued.length > 0 && current === null) return "/power 800 — flip the shift on";
+  if (current === null && queued.length > 0 && !beltBuilt) return `/mine — ${queued[0]?.id ?? "next item"} waits in the queue`;
+
+  if (current?.mode === "hand" && state.shippedCount === 0) return `/cat src/ore/${current.id}.ts · /grep · /fix — fix it by hand`;
+  if (current?.mode === "hand" && state.shippedCount >= 1) return "ask the model for help, then /paste its command";
+  if (current?.mode === "agent") return null;
+  return null;
+}
+
+export function factoryFloor(hud: FactoryHudState, status: MissionStatus, frame: number): FloorModel {
+  const current = hud.currentItemId === null
+    ? null
+    : hud.items.find((item) => item.itemId === hud.currentItemId && item.status === "in-progress") ?? null;
+  const agentInProgress = current?.mode === "agent";
+  const agentLive = Boolean(agentInProgress && (status === "STREAMING" || status === "RUNNING TOOL"));
+  const shipped = Math.max(
+    hud.touchSeries.length,
+    hud.items.filter((item) => item.status === "shipped").length,
+    hud.sciencePacks.red ?? 0,
+  );
+  const red = hud.sciencePacks.red ?? shipped;
+  const miner = hud.machines.find((machine) => machine.kind === "bare-agent");
+  const belt = hud.machines.find((machine) => machine.kind === "routing-belt");
+  const assembler = hud.machines.find((machine) => machine.kind === "skill");
+  const circuit = hud.machines.find((machine) => machine.kind === "policy-circuit");
+  const skillLabel = assembler?.label.replace(/^skill:\s*/i, "").replace(/^Skill:\s*/i, "") || "greeter-fix";
+  const beltOffset = ((frame % FLOOR_LANE_WIDTH) + FLOOR_LANE_WIDTH) % FLOOR_LANE_WIDTH;
+
+  return {
+    nodes: [
+      { id: "ore", label: "ORE", built: true, active: false, detail: `${Math.max(0, FACTORY_VARIANT_PLAN.length - shipped)} raw` },
+      { id: "miner", label: "burner agent", built: Boolean(miner), active: agentLive, detail: miner ? current?.itemId ?? "idle" : "locked · research red-1" },
+      { id: "belt", label: "routing belt", built: Boolean(belt), active: hud.power.shiftActive, detail: belt ? hud.power.shiftActive ? "shift on" : "idle" : "locked · research red-2" },
+      { id: "assembler", label: "skill: greeter-fix", built: Boolean(assembler), active: Boolean(assembler && agentInProgress), detail: assembler ? skillLabel : "locked · research red-3" },
+      { id: "circuit", label: "policy circuit", built: Boolean(circuit), active: Boolean(circuit && agentInProgress), detail: circuit ? "4 rules" : "locked · research red-4" },
+      { id: "ship", label: "SHIP", built: true, active: false, detail: `${shipped} shipped · red ×${red}` },
+    ],
+    beltDot: agentInProgress && current ? { itemId: current.itemId, offset: beltOffset } : null,
+  };
 }
 
 const MINI_MAP_NODES: Array<Omit<MiniMapMachineNode, "built" | "machine">> = [

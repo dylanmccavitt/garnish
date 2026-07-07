@@ -14,7 +14,14 @@ Enter
 Sleep 500ms
 Type "bun proto/factory/main.ts"
 Enter
-Sleep 5s
+# video-game startup: world-select menu (fresh save -> create a world)
+Sleep 4s
+Type "n"
+Enter
+Sleep 2s
+Type "demo-kitchen"
+Enter
+Sleep 6s
 
 # stage 0: bare chat + first hand-built ore item
 Type "/mine"

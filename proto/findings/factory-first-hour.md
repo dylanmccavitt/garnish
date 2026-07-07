@@ -119,3 +119,51 @@ issues against factory nouns. The taxonomy additions (`item.*`,
 `touch.recorded`, `machine.built`, `research.completed`, `shift.*`,
 `power.brownout`), `sameItem:`, `send(text, source)`, and the belt power rule
 graduate; the prefix protocols and mode-attribution warts do not.
+
+## Proto #5 addendum (founder-feedback wave: sprites, hints, floor, world menu)
+
+Founder verdict on #4: descent + bare start good; sprites bad; needs guidance;
+wants to SEE the factory working; startup should feel like a video-game menu
+with per-project worlds. This wave answered all four on the same slice:
+
+- **Machine sprites via Codex imagegen graduate.** `codex exec --enable
+  image_generation -s workspace-write` produced six machine PNGs
+  (miner/belt/assembler/circuit/ore/bolt) baked through `px2ansi` — all six
+  read as their machines at terminal scale (frame-verified). Pipeline note:
+  quality-gate thresholds must scale with sprite size (a 10px sprite maxes at
+  5 half-block rows).
+- **`nextActionHint(state)` is the tutorializer.** Eight prioritized rules
+  derived purely from `FactoryState`, rendered as a dim `HINT …` row above the
+  input at every stage, plus one SPRIG boot tip. The bare start now teaches
+  itself: frame-verified `HINT /mine — item-1 waits in the queue` at hour zero.
+  This is the gamified-learning seam — hints are state-derived, never scripted
+  to the episode.
+- **The mini-map became a live FACTORY FLOOR**: connected vertical chain (ore →
+  burner agent → routing belt lane → assembler → circuit → ship) with
+  built/dim states, per-node detail (current item id, rule count, ship
+  totals), an animated belt dot while an agent item is in flight (unit-tested;
+  too brief to freeze-frame with the scripted model), and the power meter at
+  the base. "Watch your factory work" reads on screen.
+- **World menu lands the save-slot feel.** Text-mode startup: Sprig banner,
+  numbered world slots with per-world factory summaries (`7 shipped · red ×7 ·
+  4 machines · 2m ago` from `<world>/world.json`), `n) new world`, `q) quit`.
+  Each world is its own `wireFactory` root — machines/skills/policies persist
+  per world across launches. `--world <name>` bypasses for tapes/CI.
+- **Boot-race lesson (2nd instance of the class):** any event emitted between
+  `startTui()` returning and the async renderer mounting is invisible to the
+  UI (the SPRIG tip vanished). Deferred emit is the proto patch; the v3 seam
+  should be an async `startTui`/onReady. Same root cause as #4's stage
+  regression: the UI must not depend on catching live events it might miss.
+
+**Open question for the ledger (founder raised, unresolved):** how factories
+span real projects. The menu-as-project-directory FEEL is validated (world =
+workspace = mini-factory with its own machines/skills), but binding worlds to
+real repos contradicts ledger Q2's "real repos never enter gameplay;
+graduation = exporting the factory". Candidate resolution for PRD v3: worlds
+stay in-game; the EXPORT flow targets a chosen real repo per world, so "your
+proj directory" is the export surface, not the play surface. Needs a founder
+grilling pass before v3 is stamped.
+
+Wave evidence: `tsc` clean · 94 tests / 0 fail · 13/13 + 16/16 beats ·
+re-recorded mp4s frame-verified (menu slots + Sprig banner, SPRIG boot tip,
+/mine hint, six machine sprites on the floor, brownout banner + meter).

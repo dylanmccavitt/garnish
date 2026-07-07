@@ -107,8 +107,10 @@ export function startTui(opts: FactoryTuiOpts): { prompter: ApprovalPrompter; st
 export {
   deriveStage,
   emptyFactoryHud,
+  factoryFloor,
   hudFromFactoryState,
   miniMapModel,
+  nextActionHint,
   powerMeter,
   queueStripLine,
   reduceFactoryHud,

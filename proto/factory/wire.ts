@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createRulesEngine } from "../approvals";
@@ -15,9 +15,10 @@ import { GREETER_BUG_FAMILY } from "./ore";
 import { circuitAllows, createCircuit, type Circuit } from "./policy";
 import { forgeSkillArtifact, skillBrief } from "./skills";
 import { evaluateChecks, startShipVerifier } from "./verify";
-import type { FactoryWireOptions, MachineState, TaskItem, WiredFactory } from "./types";
+import type { FactoryState, FactoryWireOptions, MachineState, TaskItem, WiredFactory } from "./types";
 import { FACTORY_RESEARCH_TRACK, FACTORY_VARIANT_PLAN } from "./types";
 
+type FactoryWireOptionsWithWorld = FactoryWireOptions & { worldName?: string };
 const BARE_AGENT_UNLOCK = "machine-bare-agent";
 const gateTierPolicy: Record<RiskTier, "ask"> = {
   safe: "ask",
@@ -33,7 +34,7 @@ const factoryGateCatalog: Array<GateCatalogEntry & { teaching: string }> = [
   { tool: "bash", unlockId: BARE_AGENT_UNLOCK, tierPolicy: gateTierPolicy, teaching: "Bash is locked: research + build the bare agent first." },
 ];
 
-export async function wireFactory(opts: FactoryWireOptions): Promise<WiredFactory> {
+export async function wireFactory(opts: FactoryWireOptionsWithWorld): Promise<WiredFactory> {
   const { workspace, sessionTemp } = scaffoldWorkspace(opts.root ? { root: opts.root } : {});
   const root = join(workspace, "..");
   const sessionId = crypto.randomUUID();
@@ -94,6 +95,11 @@ export async function wireFactory(opts: FactoryWireOptions): Promise<WiredFactor
 
   const hand = createHandActions({ workspace, sink, engine, harnessSend: (text) => harness.send(text) });
   const verifier = startShipVerifier({ sink, engine, workspace, evaluateChecks });
+  const worldName = opts.worldName ?? "factory";
+  const unsubscribeWorldSummary = sink.bus.subscribe((event) => {
+    if (event.type !== "item.shipped" && event.type !== "machine.built" && event.type !== "session.end") return;
+    writeWorldSummary({ root, name: worldName, state: engine.state() });
+  });
 
   const unsubscribeAutomation = sink.bus.subscribe((event) => {
     if (event.type === "machine.built" && event.kind === "bare-agent" && !bareAgentUnlocked) {
@@ -177,8 +183,22 @@ export async function wireFactory(opts: FactoryWireOptions): Promise<WiredFactor
       engine.stop();
       verifier.stop();
       sink.emit({ type: "session.end" });
+      unsubscribeWorldSummary();
     },
   };
+}
+
+function writeWorldSummary(opts: { root: string; name: string; state: FactoryState }): void {
+  const shipped = opts.state.shippedCount;
+  const summary = {
+    name: opts.name,
+    shipped,
+    science: { red: shipped },
+    machines: opts.state.machines.map((machine) => machine.label),
+    updatedAt: new Date().toISOString(),
+  };
+  mkdirSync(opts.root, { recursive: true });
+  writeFileSync(join(opts.root, "world.json"), `${JSON.stringify(summary, null, 2)}\n`, "utf8");
 }
 
 function createFactoryApprovalHook(opts: {

@@ -13,15 +13,16 @@ import { Transcript, emptyTranscript, reduceTranscript, type TranscriptModel } f
 import { theme } from "../../theme";
 import {
   emptyFactoryHud,
+  factoryFloor,
   hudFromFactoryState,
-  miniMapModel,
+  nextActionHint,
   powerMeter,
   queueStripLine,
   stageFromState,
   touchSeriesLine,
   type FactoryHudState,
   type FactoryStage,
-  type MiniMapMachineNode,
+  type FloorNode,
 } from "./model";
 
 export interface ApprovalController {
@@ -101,49 +102,71 @@ function QueueBand({ hud }: { hud: FactoryHudState }) {
   );
 }
 
-const spriteByNode: Record<MiniMapMachineNode["id"], keyof typeof PIXEL_SPRITES> = {
-  miner: "coin",
-  belt: "door",
-  assembler: "medal",
-  circuit: "emblemUnlock",
+const spriteByFloorNode: Record<FloorNode["id"], keyof typeof PIXEL_SPRITES> = {
+  ore: "orePatch",
+  miner: "minerDrill",
+  belt: "routingBelt",
+  assembler: "assembler",
+  circuit: "circuitPole",
+  ship: "powerBolt",
 };
 
-function MachineNodeView({ node }: { node: MiniMapMachineNode }) {
+function beltLane(dot: { itemId: string; offset: number } | null, built: boolean): string {
+  const cells: string[] = Array.from({ length: 12 }, () => built ? "═" : "░");
+  if (built && dot) cells[Math.max(0, Math.min(cells.length - 1, dot.offset))] = "◆";
+  return cells.join("");
+}
+
+function FloorNodeView({ node, dot, frame }: { node: FloorNode; dot: { itemId: string; offset: number } | null; frame: number }) {
+  const activePulse = node.id === "miner" && node.active ? frame % 2 === 0 ? "▶" : "◆" : node.active ? "◆" : node.built ? "●" : "○";
+  const color = node.active ? theme.amber : node.built ? theme.primary : theme.dim;
   return (
-    <box style={{ flexDirection: "row", marginBottom: 1 }}>
-      <PixelSpriteView sprite={PIXEL_SPRITES[spriteByNode[node.id]]} dim={!node.built} />
-      <box style={{ flexDirection: "column", paddingLeft: 1 }}>
-        <text fg={node.built ? theme.primary : theme.dim} attributes={node.built ? TextAttributes.BOLD : TextAttributes.DIM}>{node.built ? "●" : "○"} {node.label}</text>
-        <text fg={theme.dim}>{node.kind}</text>
-        <text fg={theme.dim}>{node.machine?.artifact ?? "unbuilt"}</text>
+    <box style={{ flexDirection: "row", marginBottom: node.id === "ship" ? 0 : 1 }}>
+      <PixelSpriteView sprite={PIXEL_SPRITES[spriteByFloorNode[node.id]]} dim={!node.built} />
+      <box style={{ flexDirection: "column", paddingLeft: 1, flexGrow: 1 }}>
+        <text fg={color} attributes={node.built ? TextAttributes.BOLD : TextAttributes.DIM}>{activePulse} {node.label}</text>
+        <text fg={node.built ? theme.dim : theme.amber}>{node.detail}</text>
+        {node.id === "belt" ? <text fg={node.built ? theme.amber : theme.dim}>│ {beltLane(dot, node.built)} │</text> : null}
       </box>
     </box>
   );
 }
 
-function MiniMapPane({ hud }: { hud: FactoryHudState }) {
-  const map = miniMapModel(hud);
+function FactoryFloorPane({ hud, status, frame }: { hud: FactoryHudState; status: StatusModel; frame: number }) {
+  const floor = factoryFloor(hud, status.status, frame);
   const meterColor = hud.brownoutFlash ? theme.bg : hud.power.shiftActive ? theme.amber : theme.dim;
   return (
     <box title="FACTORY FLOOR" titleColor={hud.brownoutFlash ? theme.red : theme.accent} style={{ width: "34%", minWidth: 38, border: true, borderColor: hud.brownoutFlash ? theme.red : theme.border, flexDirection: "column", paddingLeft: 1, paddingRight: 1, backgroundColor: theme.panel }}>
-      <box style={{ flexDirection: "row", height: 1 }}>
-        <text fg={theme.amber}>ORE {map.oreRemaining}</text>
-        <text fg={theme.dim}> · RED {map.sciencePacks.red ?? 0}</text>
+      <box style={{ flexDirection: "column", flexGrow: 1 }}>
+        {floor.nodes.map((node, index) => (
+          <box key={node.id} style={{ flexDirection: "column" }}>
+            <FloorNodeView node={node} dot={floor.beltDot} frame={frame} />
+            {index < floor.nodes.length - 1 ? <text fg={node.built ? theme.dim : theme.amber}>  │</text> : null}
+          </box>
+        ))}
       </box>
-      <box style={{ flexDirection: "row", height: 1, backgroundColor: hud.brownoutFlash ? theme.red : undefined }}>
-        <text fg={meterColor} attributes={hud.brownoutFlash ? TextAttributes.BOLD : undefined}>{powerMeter(hud, 14)}</text>
-      </box>
-      <box style={{ flexDirection: "column", flexGrow: 1, paddingTop: 1 }}>
-        {map.machines.map((node) => <MachineNodeView key={node.id} node={node} />)}
+      <box style={{ flexDirection: "row", minHeight: 3, backgroundColor: hud.brownoutFlash ? theme.red : undefined }}>
+        <PixelSpriteView sprite={PIXEL_SPRITES.powerBolt} dim={!hud.power.shiftActive && !hud.brownoutFlash} />
+        <box style={{ flexDirection: "column", paddingLeft: 1, justifyContent: "center" }}>
+          <text fg={meterColor} attributes={hud.brownoutFlash ? TextAttributes.BOLD : undefined}>{powerMeter(hud, 14)}</text>
+        </box>
       </box>
     </box>
   );
+}
+
+function HintRow({ hint }: { hint: string | null }) {
+  return hint ? (
+    <box style={{ height: 1, flexDirection: "row", justifyContent: "center", backgroundColor: theme.bg }}>
+      <text fg={theme.amber} attributes={TextAttributes.DIM}>HINT {hint}</text>
+    </box>
+  ) : null;
 }
 
 function StatusInput({ status, input, setInput, focused, hint }: { status: StatusModel; input: string; setInput(value: string): void; focused: boolean; hint: string | null }) {
   return (
     <box style={{ flexDirection: "column" }}>
-      {hint ? <box style={{ height: 1, flexDirection: "row", justifyContent: "center", backgroundColor: theme.bg }}><text fg={theme.dim}>{hint}</text></box> : null}
+      <HintRow hint={hint} />
       <box style={{ border: true, borderColor: status.status === "AWAITING APPROVAL" ? theme.amber : theme.border, height: 3, paddingLeft: 1, paddingRight: 1, flexDirection: "row", alignItems: "center", backgroundColor: theme.panel }}>
         <text fg={statusColors[status.status]} attributes={TextAttributes.BOLD}>{status.pulse ? "●" : "○"} {status.status}  </text>
         <input focused={focused} placeholder="factory input · /help for commands" value={input} onInput={setInput} style={{ flexGrow: 1 }} />
@@ -155,7 +178,7 @@ function StatusInput({ status, input, setInput, focused, hint }: { status: Statu
 function BareChatInput({ input, setInput, focused, hint }: { input: string; setInput(value: string): void; focused: boolean; hint: string | null }) {
   return (
     <box style={{ flexDirection: "column" }}>
-      {hint ? <text fg={theme.dim}>{hint}</text> : null}
+      <HintRow hint={hint} />
       <box style={{ border: true, borderColor: theme.border, height: 3, paddingLeft: 1, paddingRight: 1, flexDirection: "row", alignItems: "center", backgroundColor: theme.bg }}>
         <input focused={focused} placeholder="say what you want done" value={input} onInput={setInput} style={{ flexGrow: 1 }} />
       </box>
@@ -173,7 +196,7 @@ function startingHud(factoryState: () => FactoryState): FactoryHudState {
 
 export function FactoryApp(opts: FactoryAppOpts) {
   const [input, setInput] = useState("");
-  const [hint, setHint] = useState<string | null>(null);
+  const [commandHint, setCommandHint] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<TranscriptModel>(() => emptyTranscript());
   const [hud, setHud] = useState<FactoryHudState>(() => startingHud(opts.factoryState));
   const [status, setStatus] = useState<StatusModel>(() => emptyStatus());
@@ -244,24 +267,26 @@ export function FactoryApp(opts: FactoryAppOpts) {
     if (key.name === "return" && input.trim()) {
       const line = input.trim();
       if (line.startsWith("/")) {
-        if (!opts.onCommand(line)) setHint(`Unknown command: ${line}`);
-        else setHint(null);
+        if (!opts.onCommand(line)) setCommandHint(`Unknown command: ${line}`);
+        else setCommandHint(null);
       } else {
         opts.send(line);
-        setHint(null);
+        setCommandHint(null);
       }
       setInput("");
     }
   });
 
-  const stage = stageFromState(opts.factoryState());
+  const factoryState = opts.factoryState();
+  const stage = stageFromState(factoryState);
+  const renderHint = commandHint ?? nextActionHint(factoryState);
   const flash = hud.brownoutFlash || moments.some((moment) => moment.ttl > 10);
 
   if (stage === 0) {
     return (
       <box style={{ width: "100%", height: "100%", flexDirection: "column", backgroundColor: theme.bg }}>
         <Transcript model={transcript} />
-        <BareChatInput input={input} setInput={setInput} focused={modal === null} hint={hint} />
+        <BareChatInput input={input} setInput={setInput} focused={modal === null} hint={renderHint} />
         <ApprovalModal state={modal} />
       </box>
     );
@@ -282,9 +307,9 @@ export function FactoryApp(opts: FactoryAppOpts) {
         <box style={{ flexGrow: 1, flexDirection: "column", minWidth: 35 }}>
           <Transcript model={transcript} />
         </box>
-        {stage === 2 ? <MiniMapPane hud={hud} /> : null}
+        {stage === 2 ? <FactoryFloorPane hud={hud} status={status} frame={frame} /> : null}
       </box>
-      <StatusInput status={status} input={input} setInput={setInput} focused={modal === null} hint={hint} />
+      <StatusInput status={status} input={input} setInput={setInput} focused={modal === null} hint={renderHint} />
       <box style={{ height: 1, flexDirection: "row", justifyContent: "center", backgroundColor: theme.bg }}>
         <text fg={theme.dim}>Enter send · /commands route to factory · a/p/d/r approvals · Esc abort · Ctrl+C quit</text>
       </box>
