@@ -29,6 +29,13 @@ Tracker: Linear
   Cursor Cloud-ready). All 12 demo beats pass; spec held. PRD/ARD v2 carry "Prototype
   amendments (2026-07-06)" sections; re-scope comments posted on LOO-155/156/159/160/161/162/
   164/165/166/170/171/173/174/179. Delete or absorb the proto/ tree once re-scopes land.
+  FACTORIO PIVOT (DECIDED 2026-07-06): game design superseded — the factory vision (start
+  bare like pi, automate yourself out of the loop machine-by-machine; UI is the progress bar;
+  tokens are electricity; ore = procedural task families; graduation = export the factory).
+  Decision ledger (9 grilled Qs): https://linear.app/dylanmccavitt/document/decision-record-factorio-pivot-2026-07-06-the-factory-vision-for-9646047ca1b0
+  Harness substrate (M0/M1: LOO-157, 159-165) survives verbatim; M2-M4 to be re-stamped
+  after proto #4 (first-hour vertical slice, new thread). The three TUI variants
+  (expedition/dungeon/arcade, commit aa036f3) are scratched; findings files remain reference.
   Implementation issues (stamped 2026-07-04): 25 dependency-ordered issues LOO-155..LOO-179
   under project milestones M0-M4, wired with Linear blocked-by relations.
   - Unblocked (Todo): LOO-155 OpenTUI React/Solid spike, LOO-156 Bun+Seatbelt spike,
